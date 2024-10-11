@@ -1,5 +1,18 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import os, time
+import sys
+import gzip
+import argparse
+import pickle
+from itertools import combinations
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from multiprocessing import Pool, cpu_count
+from openbabel import pybel, openbabel
+
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.*')
 
 
 class ConformerGenerator:
@@ -9,43 +22,20 @@ class ConformerGenerator:
         self.num_conf = num_conf
 
     def _prepare_molecule(self, mol):
-        mol = Chem.AddHs(mol)
-        return mol
+        pass
 
     def _embedd_conformers(self, mol):
         pass
 
     def _optimize_conformers(self, mol):
-        pass
-
-    def generate_conformers(self, mol):
-        pass
-
-
-class ConformerFilter:
-    def __init__(self):
-        super().__init__()
-
-    def filter_by_energy(self, mol, e_threshold=0):
-
-        conf_energy_list = []
         for conf in mol.GetConformers():
-            ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf.GetId())
-            if ff is None:
-                continue
-            conf_energy_list.append((conf.GetId(), ff.CalcEnergy()))
-        conf_energy_list = sorted(conf_energy_list, key=lambda x: x[1])
-
-        # filter conformers
-        min_energy = conf_energy_list[0][1]
-        for conf_id, conf_energy in conf_energy_list[1:]:
-            if conf_energy - min_energy >= e_threshold:
-                mol.RemoveConformer(conf_id)
-
+            AllChem.UFFOptimizeMolecule(mol, confId=conf.GetId())
         return mol
 
-    def filter_by_rmsd(self, mol, rmsd_threshold=2):
-        pass
+    def generate_conformers(self, mol):
+        mol = self._embedd_conformers(mol)
+        mol = self._optimize_conformers(mol)
+        return mol
 
 
 class RDKitConformerGenerator(ConformerGenerator):
@@ -59,21 +49,78 @@ class RDKitConformerGenerator(ConformerGenerator):
         return mol
 
     def _embedd_conformers(self, mol):
-        AllChem.EmbedMultipleConfs(mol, numConfs=self.num_conf, maxAttempts=700, randomSeed=42)
-        return mol
-
-    def _optimize_conformers(self, mol):
-        for conf in mol.GetConformers():
-            AllChem.UFFOptimizeMolecule(mol, confId=conf.GetId())
-        return mol
-
-    def generate_conformers(self, mol):
         mol = self._prepare_molecule(mol)
-        mol = self._embedd_conformers(mol)
-        mol = self._optimize_conformers(mol)
+        AllChem.EmbedMultipleConfs(mol, numConfs=self.num_conf, maxAttempts=700, randomSeed=42)
         return mol
 
 
 class BabelConformerGenerator(ConformerGenerator):
-    pass
+    def __init__(self, num_conf=10):
+        super().__init__()
 
+        self.num_conf = num_conf
+
+    def _prepare_molecule(self, mol):
+        mol_rdkit = Chem.AddHs(mol)
+        mol_babel = pybel.readstring('mol', Chem.MolToMolBlock(mol)).OBMol  # convert mol from RDKit to OB
+        mol_babel.AddHydrogens()
+        return mol_rdkit, mol_babel
+
+    def _embedd_conformers(self, mol):
+        mol_rdkit, mol_babel = self._prepare_molecule(mol)
+        #
+        ff = pybel._forcefields["mmff94"]
+        success = ff.Setup(mol_babel)
+        if not success:
+            ff = pybel._forcefields["uff"]
+            success = ff.Setup(mol_babel)
+            if not success:
+                sys.exit("Cannot set up Open Babel force field")
+
+        ff.DiverseConfGen(0, 100000, 100, False)  # rmsd, nconf_tries, energy, verbose
+        ff.GetConformers(mol_babel)
+        ff.ConjugateGradients(100, 1.0e-3)
+        #
+        obconversion = openbabel.OBConversion()
+        obconversion.SetOutFormat('mol')
+        #
+        conf_mol_blocks = []
+        for conf_num in range(max(0, mol_babel.NumConformers() - self.num_conf), mol_babel.NumConformers()):
+            mol_babel.SetConformer(conf_num)
+            conf_mol_blocks.append(obconversion.WriteString(mol_babel))
+
+        rdkit_confs = []
+        for i in conf_mol_blocks:
+            conf_rdkit = Chem.MolFromMolBlock(i, removeHs=False)
+            rdkit_confs.append(conf_rdkit)
+        #
+        for conf in rdkit_confs:
+            mol_rdkit.AddConformer(conf.GetConformer())
+
+        return mol_rdkit
+
+
+class ConformerFilter:
+    def __init__(self):
+        super().__init__()
+
+    def filter_by_energy(self, mol, e_thresh=1):
+
+        conf_energy_list = []
+        for conf in mol.GetConformers():
+            ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf.GetId())
+            if ff is None:
+                continue
+            conf_energy_list.append((conf.GetId(), ff.CalcEnergy()))
+        conf_energy_list = sorted(conf_energy_list, key=lambda x: x[1])
+
+        # filter conformers
+        min_energy = conf_energy_list[0][1]
+        for conf_id, conf_energy in conf_energy_list[1:]:
+            if conf_energy - min_energy >= e_thresh:
+                mol.RemoveConformer(conf_id)
+
+        return mol
+
+    def filter_by_rmsd(self, mol, rmsd_thresh=2):
+        pass
