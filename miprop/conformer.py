@@ -12,14 +12,16 @@ from multiprocessing import Pool, cpu_count
 from openbabel import pybel, openbabel
 
 from rdkit import RDLogger
+
 RDLogger.DisableLog('rdApp.*')
 
 
 class ConformerGenerator:
-    def __init__(self, num_conf=10):
+    def __init__(self, num_conf=10, e_thresh=None):
         super().__init__()
 
         self.num_conf = num_conf
+        self.e_thresh = e_thresh
 
     def _prepare_molecule(self, mol):
         pass
@@ -32,17 +34,30 @@ class ConformerGenerator:
             AllChem.UFFOptimizeMolecule(mol, confId=conf.GetId())
         return mol
 
-    def generate_conformers(self, mol):
+    def _generate_conformers(self, mol):
         mol = self._embedd_conformers(mol)
         mol = self._optimize_conformers(mol)
+        if self.e_thresh:
+            mol = filter_by_energy(mol, self.e_thresh)
         return mol
+
+    def generate_conformers_for_list_of_mols(self, list_of_mols):
+        list_of_mols_with_confs = []
+        for mol in list_of_mols:
+            mol = self._generate_conformers(mol)
+            list_of_mols_with_confs.append(mol)
+        return list_of_mols_with_confs
+
+    def transform(self, list_of_mols):
+        return self.generate_conformers_for_list_of_mols(list_of_mols)
 
 
 class RDKitConformerGenerator(ConformerGenerator):
-    def __init__(self, num_conf=10):
+    def __init__(self, num_conf=10, e_thresh=None):
         super().__init__()
 
         self.num_conf = num_conf
+        self.e_thresh = e_thresh
 
     def _prepare_molecule(self, mol):
         mol = Chem.AddHs(mol)
@@ -100,27 +115,23 @@ class BabelConformerGenerator(ConformerGenerator):
         return mol_rdkit
 
 
-class ConformerFilter:
-    def __init__(self):
-        super().__init__()
+def filter_by_energy(mol, e_thresh=1):
+    conf_energy_list = []
+    for conf in mol.GetConformers():
+        ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf.GetId())
+        if ff is None:
+            continue
+        conf_energy_list.append((conf.GetId(), ff.CalcEnergy()))
+    conf_energy_list = sorted(conf_energy_list, key=lambda x: x[1])
 
-    def filter_by_energy(self, mol, e_thresh=1):
+    # filter conformers
+    min_energy = conf_energy_list[0][1]
+    for conf_id, conf_energy in conf_energy_list[1:]:
+        if conf_energy - min_energy >= e_thresh:
+            mol.RemoveConformer(conf_id)
 
-        conf_energy_list = []
-        for conf in mol.GetConformers():
-            ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf.GetId())
-            if ff is None:
-                continue
-            conf_energy_list.append((conf.GetId(), ff.CalcEnergy()))
-        conf_energy_list = sorted(conf_energy_list, key=lambda x: x[1])
+    return mol
 
-        # filter conformers
-        min_energy = conf_energy_list[0][1]
-        for conf_id, conf_energy in conf_energy_list[1:]:
-            if conf_energy - min_energy >= e_thresh:
-                mol.RemoveConformer(conf_id)
 
-        return mol
-
-    def filter_by_rmsd(self, mol, rmsd_thresh=2):
-        pass
+def filter_by_rmsd(mol, rmsd_thresh=2):
+    pass

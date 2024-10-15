@@ -1,8 +1,9 @@
 import pandas as pd
 from rdkit.Chem import Descriptors3D
+from . import Descriptor
 
 
-class RDKitDescriptor:
+class RDKitDescriptor(Descriptor):
     def __init__(self, desc_name):
         super().__init__()
         self.desc_name = desc_name
@@ -17,7 +18,7 @@ class RDKitDescriptor:
         columns = [f'{self.column_name}_{n}' for n in range(len(desc_vector))]
         return pd.DataFrame.from_dict(desc_dict, orient='index', columns=columns)
 
-    def calc_descriptors(self, list_of_mols):
+    def calc_descriptors_for_list_of_mols(self, list_of_mols):
         list_of_descr = []
         for mol_id, mol in enumerate(list_of_mols):
             mol_descr = self._mol_to_descr(mol)
@@ -47,9 +48,10 @@ class RDKitGENERAL(RDKitDescriptor):
     def _mol_to_descr(self, mol):
         desc_df = pd.DataFrame()
         for desc_name in self.desc_list:
+            column_name = desc_name.replace('Calc', '')
             for conf in mol.GetConformers():
                 desc_value = getattr(Descriptors3D.rdMolDescriptors, desc_name)(mol, confId=conf.GetId())
-                desc_df.loc[conf.GetId(), self.column_name] = desc_value
+                desc_df.loc[conf.GetId(), column_name] = desc_value
         return desc_df
 
 

@@ -1,17 +1,14 @@
 
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+from pandas import DataFrame
 
 
-def scale_descriptors(x_train, x_test):
-    scaler = MinMaxScaler()
-    scaler.fit(np.vstack(x_train))
+def df_to_list_of_bags(df_descr):
+    list_of_bags = []
+    for i in df_descr.index.unique():
+        list_of_bags.append(df_descr.loc[i].values)
 
-    x_train_scaled = x_train.copy()
-    x_test_scaled = x_test.copy()
-    for i, bag in enumerate(x_train):
-        x_train_scaled[i] = scaler.transform(bag)
-    for i, bag in enumerate(x_test):
-        x_test_scaled[i] = scaler.transform(bag)
+    return list_of_bags
 
-    return x_train_scaled, x_test_scaled
+

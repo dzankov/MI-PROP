@@ -4,6 +4,7 @@ from torch.nn import Sequential, Linear, ReLU, Softmax, Sigmoid
 from .base_nets import BaseNet, BaseRegressor, BaseClassifier
 from typing import Sequence, Tuple
 
+
 class MainNet:
     """
     Abstract class not intended to be invoked directly.

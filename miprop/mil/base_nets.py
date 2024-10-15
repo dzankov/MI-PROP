@@ -62,16 +62,7 @@ class BaseNet(nn.Module):
     This is intended only for convenience of subclass implementations
     and should not be invoked directly.
     """
-    def __init__(self, net: Optional[nn.Module] = None, init_cuda: bool =False):
-        """
-        Parameters
-        ----------
-        net: nn.Module
-        PyTorch model object.
-        init_cuda: bool
-        Should cuda GPUs be used or not?
-
-        """
+    def __init__(self, net: Optional[nn.Module] = None, init_cuda: bool = False):
         super().__init__()
         self.net = net
         self.init_cuda = init_cuda
@@ -79,38 +70,10 @@ class BaseNet(nn.Module):
         if self.net and self.init_cuda:
             self.net.cuda()
 
-
     def name(self):
         return self.__class__.__name__
 
     def add_padding(self, x: Union[Sequence, np.array]) -> Tuple[np.array,np.array]:
-        """
-        Adds zero-padding to each  bag in x (sequence of bags) to bring x to tensor of shape Nmol*max(Nconf)*Ndescr,
-        where: Nconf - number of conformers for a given molecule,
-        Ndescr - length of descriptor string, Nmol - number of molecules  in dataset
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from miqsar.mil.base_nets import BaseNet
-        >>> net = BaseNet()
-        >>> x_train = [[[1, 1],[1,1]],[[1, 1]]] # 2 molecules, one with 2 conformers and the other with only 1 conformer
-        >>> _, m = net.add_padding(x_train)
-        >>> m
-        array([[[1.],
-                [1.]],
-        <BLANKLINE>
-               [[1.],
-                [0.]]])
-
-        Parameters
-         -----------
-         x:  Union[Sequence, np.array]
-         Sequence of bags (sets of conformers, one set for each molecule)
-         Returns
-         -----------
-         Tuple of 2 tensors: new padded  tensor x and   mask tensor m (shape of m: Nmol*max(Nconf)*1): each row populated with
-          either 1 where conformer exists, or 0 where conformer didnt exist and zeros were added.
-            """
         bag_size = max(len(i) for i in x)
         mask = np.ones((len(x), bag_size, 1))
 
@@ -126,34 +89,6 @@ class BaseNet(nn.Module):
         return out_bags, mask
 
     def loss_batch(self, x_mb: Tensor, y_mb: Tensor, m_mb: Tensor, optimizer: Optional[torch.optim.Optimizer]=None) -> float:
-        """
-        Compute loss on mini batch. NOTE: This method works only with  subclasses which initialize main_net and loss
-        Parameteres
-        -----------
-        x_mb: torch.Tensor
-        y_mb: torch.Tensor
-        m_mb: torch.Tensor
-        optimizer: Optional[torch.optim.Optimizer]
-        instance of optimizer
-        Returns
-        -----------
-        Loss per batch
-
-        Examples
-        -----------
-        >>> from torch import randn, manual_seed, from_numpy
-        >>> from torch_optimizer import Yogi
-        >>> from miqsar.mil.mi_nets import BagNetRegressor
-        >>> s = manual_seed(0) # seed for reproducible net weights (assign seed to a variable to supress std output)
-        >>> x_train, y_train= randn((3, 3, 3)), randn(3)
-        >>> bag_net = BagNetRegressor(ndim=(x_train[0].shape[-1], 4, 6, 4), init_cuda=False)
-        >>> _, m = bag_net.add_padding(x_train)
-        >>> m = from_numpy(m).float()
-        >>> opt = Yogi(bag_net.parameters())  # instantiate optimizer
-        >>> loss_mb = bag_net.loss_batch(x_train, y_train,m, opt)
-        >>> round(loss_mb,2)
-        2.8
-        """
         w_out, y_out = self.forward(x_mb, m_mb)
         total_loss = self.loss(y_out, y_mb)
         if optimizer is not None:
