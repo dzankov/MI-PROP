@@ -12,7 +12,7 @@ To install ``MI-PROP``, first clone the repository and move the package director
 
 .. code-block:: bash
 
-    git clone https://github.com/DZ/MI-PROP.git
+    git clone https://github.com/dzankov/MI-PROP.git
     cd MI-PROP/
 
 Next, create ``MI-PROP`` environment with ``miprop_env.yaml`` file:
@@ -26,6 +26,7 @@ The installed ``MI-PROP`` environment can then be added to the Jupyter platform:
 
 .. code-block:: bash
 
+    conda install ipykernel
     python -m ipykernel install --user --name miprop --display-name "miprop"
 
 

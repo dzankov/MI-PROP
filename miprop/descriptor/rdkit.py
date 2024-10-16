@@ -25,8 +25,12 @@ class RDKitDescriptor(Descriptor):
             mol_descr = mol_descr.set_index([pd.Index([mol_id for _ in mol_descr.index])])
             #
             list_of_descr.append(mol_descr)
+        #
+        df_descr = pd.concat(list_of_descr)
+        nan_cols = list(df_descr.columns[df_descr.isnull().any(axis=0)])
+        df_descr = df_descr.drop(columns=nan_cols)
 
-        return pd.concat(list_of_descr)
+        return df_descr
 
 
 class RDKitGENERAL(RDKitDescriptor):
