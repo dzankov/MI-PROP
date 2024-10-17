@@ -1,11 +1,11 @@
 import torch
 from torch.nn import Sequential, Linear, Sigmoid, ReLU
-from miqsar.estimators.neural_nets.base_nets import BaseClassifier, BaseNet
+from miprop.mil.networks.modules.base import BaseNet, BaseClassifier
 from miprop.mil.networks.modules.regular import Pooling
 from miprop.mil.networks.modules.base import MainNet
 
 
-class GPNet(BaseNet):
+class GaussianPoolingNet(BaseNet):
     def __init__(self, ndim=None, det_ndim=None, pool='lse', init_cuda=False):
         super().__init__(init_cuda=init_cuda)
         self.main_net = MainNet(ndim)
@@ -19,9 +19,9 @@ class GPNet(BaseNet):
             self.estimator.cuda()
 
     def reset_weights(self):
-        self.main_net.apply(self.reset_params)
-        self.detector.apply(self.reset_params)
-        self.estimator.apply(self.reset_params)
+        self.main_net.apply(self._reset_params)
+        self.detector.apply(self._reset_params)
+        self.estimator.apply(self._reset_params)
         
     def forward(self, x, m):
         x = self.main_net(x)
@@ -41,7 +41,7 @@ class GPNet(BaseNet):
         return out
 
 
-class GPGlobalNet(GPNet):
+class GaussianPoolingGlobalNet(GaussianPoolingNet):
     def __init__(self, ndim=None, det_ndim=None, pool='lse', init_cuda=False):
         super().__init__(ndim=ndim, det_ndim=det_ndim, pool=pool, init_cuda=init_cuda)
         self.m = torch.nn.Parameter(torch.Tensor([0.]))

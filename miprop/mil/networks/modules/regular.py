@@ -34,8 +34,8 @@ class BagNet(BaseNet):
             self.estimator.cuda()
 
     def reset_weights(self):
-        self.main_net.apply(self.reset_params)
-        self.estimator.apply(self.reset_params)
+        self.main_net.apply(self._reset_params)
+        self.estimator.apply(self._reset_params)
 
     def forward(self, x, m):
         out = self.main_net(x)
@@ -57,7 +57,7 @@ class InstanceNet(BaseNet):
             self.main_net.cuda()
 
     def reset_weights(self):
-        self.main_net.apply(self.reset_params)
+        self.main_net.apply(self._reset_params)
 
     def forward(self, x, m):
         out = self.main_net(x)

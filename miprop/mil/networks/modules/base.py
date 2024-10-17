@@ -28,10 +28,10 @@ class BaseRegressor:
 
 
 class MainNet:
-    def __new__(cls, ndim):
-        inp_dim = ndim[0]
+    def __new__(cls, hidden_layer_sizes):
+        inp_dim = hidden_layer_sizes[0]
         net = []
-        for dim in ndim[1:]:
+        for dim in hidden_layer_sizes[1:]:
             net.append(Linear(inp_dim, dim))
             net.append(ReLU())
             inp_dim = dim
@@ -39,47 +39,69 @@ class MainNet:
         return net
 
 
+def add_padding(x):
+    bag_size = max(len(i) for i in x)
+    mask = np.ones((len(x), bag_size, 1))
+
+    out = []
+    for i, bag in enumerate(x):
+        bag = np.asarray(bag)
+        if len(bag) < bag_size:
+            mask[i][len(bag):] = 0
+            padding = np.zeros((bag_size - bag.shape[0], bag.shape[1]))
+            bag = np.vstack((bag, padding))
+        out.append(bag)
+    out_bags = np.asarray(out)
+    return out_bags, mask
+
+
+def get_mini_batches(x, y, m, batch_size=16):
+    data = MBSplitter(x, y, m)
+    mb = DataLoader(data, batch_size=batch_size, shuffle=True)
+    return mb
+
+
 class BaseNet(nn.Module):
-    def __init__(self, init_cuda=False):
+    def __init__(self,
+                 hidden_layer_sizes=(128,),
+                 num_epoch=500,
+                 batch_size=128,
+                 learning_rate=0.001,
+                 weight_decay=0,
+                 weight_dropout=0,
+                 verbose=False,
+                 init_cuda=True):
+
         super().__init__()
+
+        self.hidden_layer_sizes = hidden_layer_sizes
+        self.num_epoch = num_epoch
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.weight_dropout = weight_dropout
+        self.batch_size = batch_size
         self.init_cuda = init_cuda
+        self.verbose = verbose
 
+    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
+        pass
 
-    def reset_params(self, m):
+    def _reset_params(self, m):
         if isinstance(m, nn.Linear):
             m.reset_parameters()
 
-    def add_padding(self, x):
-        bag_size = max(len(i) for i in x)
-        mask = np.ones((len(x), bag_size, 1))
-
-        out = []
-        for i, bag in enumerate(x):
-            bag = np.asarray(bag)
-            if len(bag) < bag_size:
-                mask[i][len(bag):] = 0
-                padding = np.zeros((bag_size - bag.shape[0], bag.shape[1]))
-                bag = np.vstack((bag, padding))
-            out.append(bag)
-        out_bags = np.asarray(out)
-        return out_bags, mask
-
-    def train_val_split(self, x, y, val_size=0.2, random_state=42):
+    def _train_val_split(self, x, y, val_size=0.2, random_state=42):
         x, y = np.asarray(x), np.asarray(y)
-        x, m = self.add_padding(x)
+        x, m = add_padding(x)
 
-        x_train, x_val, y_train, y_val, m_train, m_val = train_test_split(x, y, m, test_size=val_size, random_state=random_state)
-        x_train, y_train, m_train = self.array_to_tensor(x_train, y_train, m_train)
-        x_val, y_val, m_val = self.array_to_tensor(x_val, y_val, m_val)
+        x_train, x_val, y_train, y_val, m_train, m_val = train_test_split(x, y, m, test_size=val_size,
+                                                                          random_state=random_state)
+        x_train, y_train, m_train = self._array_to_tensor(x_train, y_train, m_train)
+        x_val, y_val, m_val = self._array_to_tensor(x_val, y_val, m_val)
 
         return x_train, x_val, y_train, y_val, m_train, m_val
 
-    def get_mini_batches(self, x, y, m, batch_size=16):
-        data = MBSplitter(x, y, m)
-        mb = DataLoader(data, batch_size=batch_size, shuffle=True)
-        return mb
-
-    def array_to_tensor(self, x, y, m):
+    def _array_to_tensor(self, x, y, m):
 
         x = torch.from_numpy(x.astype('float32'))
         y = torch.from_numpy(y.astype('float32'))
@@ -90,7 +112,7 @@ class BaseNet(nn.Module):
             x, y, m = x.cuda(), y.cuda(), m.cuda()
         return x, y, m
 
-    def loss_batch(self, x_mb, y_mb, m_mb, optimizer=None):
+    def _loss_batch(self, x_mb, y_mb, m_mb, optimizer=None):
         w_out, y_out = self.forward(x_mb, m_mb)
         total_loss = self.loss(y_out, y_mb)
         if optimizer is not None:
@@ -106,36 +128,37 @@ class BaseNet(nn.Module):
         out = out.view(-1, 1)
         return None, out
 
-    def fit(self, x, y, n_epoch=100, batch_size=128, lr=0.001, weight_decay=0, dropout=0, verbose=False):
-        self.reset_weights()
+    def fit(self, x, y):
+        input_layer_size = x[0].shape[-1]
+        self._initialize(input_layer_size=input_layer_size,
+                         hidden_layer_sizes=self.hidden_layer_sizes,
+                         init_cuda=self.init_cuda)
 
-        self.dropout = dropout
-
-        x_train, x_val, y_train, y_val, m_train, m_val = self.train_val_split(x, y)
-        optimizer = optim.Yogi(self.parameters(), lr=lr, weight_decay=weight_decay)
+        x_train, x_val, y_train, y_val, m_train, m_val = self._train_val_split(x, y)
+        optimizer = optim.Yogi(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
 
         val_loss = []
-        for epoch in range(n_epoch):
-            mb = self.get_mini_batches(x_train, y_train, m_train, batch_size=batch_size)
+        for epoch in range(self.num_epoch):
+            mb = get_mini_batches(x_train, y_train, m_train, batch_size=self.batch_size)
             self.train()
             for x_mb, y_mb, m_mb in mb:
-                loss = self.loss_batch(x_mb, y_mb, m_mb, optimizer=optimizer)
+                loss = self._loss_batch(x_mb, y_mb, m_mb, optimizer=optimizer)
 
             self.eval()
             with torch.no_grad():
-                loss = self.loss_batch(x_val, y_val, m_val, optimizer=None)
+                loss = self._loss_batch(x_val, y_val, m_val, optimizer=None)
                 val_loss.append(loss)
 
             min_loss_idx = val_loss.index(min(val_loss))
             if min_loss_idx == epoch:
                 best_parameters = self.state_dict()
-                if verbose:
+                if self.verbose:
                     print(epoch, loss)
         self.load_state_dict(best_parameters, strict=True)
         return self
 
     def predict(self, x):
-        x, m = self.add_padding(np.asarray(x))
+        x, m = add_padding(np.asarray(x))
         x = torch.from_numpy(x.astype('float32'))
         m = torch.from_numpy(m.astype('float32'))
         self.eval()
@@ -146,7 +169,7 @@ class BaseNet(nn.Module):
         return np.asarray(y_pred.cpu())
 
     def get_instance_weights(self, x):
-        x, m = self.add_padding(np.asarray(x))
+        x, m = add_padding(np.asarray(x))
         x = torch.from_numpy(x.astype('float32'))
         m = torch.from_numpy(m.astype('float32'))
         self.eval()
@@ -157,6 +180,3 @@ class BaseNet(nn.Module):
         w = w.view(w.shape[0], w.shape[-1]).cpu()
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
-
-
-

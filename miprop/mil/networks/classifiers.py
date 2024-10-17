@@ -1,7 +1,8 @@
 from miprop.mil.networks.modules.attention import AttentionNet, SelfAttentionNet, GatedAttentionNet, \
     TemperatureAttentionNet, GlobalTemperatureAttentionNet
 from miprop.mil.networks.modules.base import BaseClassifier
-from miprop.mil.networks.modules.gaussian import GPGlobalNet
+from miprop.mil.networks.modules.dynamic import DynamicPoolingNet, MarginLoss
+from miprop.mil.networks.modules.gaussian import GaussianPoolingGlobalNet
 from miprop.mil.networks.modules.regular import BagNet, InstanceNet
 
 
@@ -41,6 +42,16 @@ class InstanceNetClassifier(InstanceNet, BaseClassifier):
         super().__init__(ndim=ndim, pool=pool, init_cuda=init_cuda)
 
 
-class GPGlobalNetClassifier(GPGlobalNet, BaseClassifier):
+class GPGlobalNetClassifier(GaussianPoolingGlobalNet, BaseClassifier):
     def __init__(self, ndim=None, det_ndim=None, pool='lse', init_cuda=False):
         super().__init__(ndim=ndim, det_ndim=det_ndim, pool=pool, init_cuda=init_cuda)
+
+
+class DynamicPoolingNetClassifier(DynamicPoolingNet, BaseClassifier):
+    def __init__(self, ndim=None, init_cuda=True):
+        super().__init__(ndim=ndim, init_cuda=init_cuda)
+
+    def loss(self, y_pred, y_true):
+        margin_loss = MarginLoss()
+        loss = margin_loss(y_pred, y_true.reshape(-1, 1))
+        return loss

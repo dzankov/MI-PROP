@@ -17,7 +17,7 @@ class BagMinMaxScaler(BagScaler):
     def fit(self, x):
         if isinstance(x, DataFrame):
             x = df_to_list_of_bags(x)
-            self.scaler.fit(np.vstack(x))
+        self.scaler.fit(np.vstack(x))
 
     def transform(self, x):
         if isinstance(x, DataFrame):

@@ -2,7 +2,7 @@ from copy import deepcopy
 from miprop.conformer import ConformerGenerator
 from miprop.descriptor import Descriptor
 from miprop.scaler import BagScaler
-from miprop.mil.base_nets import BaseRegressor, BaseClassifier
+from miprop.mil.networks.modules.base import BaseRegressor, BaseClassifier
 
 
 class Pipeline:

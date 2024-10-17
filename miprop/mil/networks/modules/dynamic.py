@@ -1,12 +1,9 @@
 import torch
 import torch.nn.functional as F
-import numpy as np
 from torch import nn
 from torch.nn import Softmax
-from miqsar.estimators.neural_nets.base_nets import BaseRegressor, BaseClassifier, BaseNet
+from miprop.mil.networks.modules.base import BaseNet, BaseRegressor
 from miprop.mil.networks.modules.base import MainNet
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.model_selection import train_test_split
 
 
 class MarginLoss(nn.Module):
@@ -73,9 +70,9 @@ class DynamicPoolingNet(BaseNet):
             self.estimator.cuda()
             
     def reset_weights(self):
-        self.main_net.apply(self.reset_params)
-        self.dynamic_pooling.apply(self.reset_params)
-        self.estimator.apply(self.reset_params)
+        self.main_net.apply(self._reset_params)
+        self.dynamic_pooling.apply(self._reset_params)
+        self.estimator.apply(self._reset_params)
 
     def forward(self, x, m):
         x = self.main_net(x)
@@ -88,33 +85,3 @@ class DynamicPoolingNet(BaseNet):
         if isinstance(self, BaseRegressor):
             y_pred = self.scaler.inverse_transform(y_pred.reshape(-1, 1)).flatten()
         return y_pred
-
-
-class DynamicPoolingNetRegressor(DynamicPoolingNet, BaseRegressor):
-    def __init__(self, ndim=None, init_cuda=True):
-        super().__init__(ndim=ndim, init_cuda=init_cuda)
-
-    def train_val_split(self, x, y, val_size=0.2, random_state=42):
-        x, y = np.asarray(x), np.asarray(y)
-        x, m = self.add_padding(x)
-        x_train, x_val, y_train, y_val, m_train, m_val = train_test_split(x, y, m, test_size=val_size,
-                                                                          random_state=random_state)
-        if isinstance(self, BaseRegressor):
-            self.scaler = MinMaxScaler()
-            y_train = self.scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
-            y_val = self.scaler.transform(y_val.reshape(-1, 1)).flatten()
-
-        x_train, y_train, m_train = self.array_to_tensor(x_train, y_train, m_train)
-        x_val, y_val, m_val = self.array_to_tensor(x_val, y_val, m_val)
-        return x_train, x_val, y_train, y_val, m_train, m_val
-
-
-class DynamicPoolingNetClassifier(DynamicPoolingNet, BaseClassifier):
-    def __init__(self, ndim=None, init_cuda=True):
-        super().__init__(ndim=ndim, init_cuda=init_cuda)
-
-    def loss(self, y_pred, y_true):
-        margin_loss = MarginLoss()
-        loss = margin_loss(y_pred, y_true.reshape(-1, 1))
-        return loss
-
