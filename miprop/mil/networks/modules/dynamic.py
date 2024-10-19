@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.nn import Softmax
-from miprop.mil.networks.modules.base import BaseNet, BaseRegressor
+from miprop.mil.networks.modules.base import BaseNetwork, BaseRegressor
 from miprop.mil.networks.modules.base import MainNet
 
 
@@ -57,10 +57,12 @@ class DynamicPooling(nn.Module):
         return w, s
 
 
-class DynamicPoolingNet(BaseNet):
-    def __init__(self, ndim=None, init_cuda=False):
-        super().__init__(init_cuda=init_cuda)
-        self.main_net = MainNet(ndim)
+class DynamicPoolingNetwork(BaseNetwork):
+    def __init__(self, **kwarhs):
+        super().__init__(**kwarhs)
+
+    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
+        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
         self.dynamic_pooling = DynamicPooling()
         self.estimator = Norm()
 
@@ -68,11 +70,6 @@ class DynamicPoolingNet(BaseNet):
             self.main_net.cuda()
             self.dynamic_pooling.cuda()
             self.estimator.cuda()
-            
-    def reset_weights(self):
-        self.main_net.apply(self._reset_params)
-        self.dynamic_pooling.apply(self._reset_params)
-        self.estimator.apply(self._reset_params)
 
     def forward(self, x, m):
         x = self.main_net(x)

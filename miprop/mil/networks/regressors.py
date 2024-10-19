@@ -2,66 +2,64 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from miprop.mil.networks.modules.attention import AttentionNet, SelfAttentionNet, GatedAttentionNet, \
-    TemperatureAttentionNet, GumbelAttentionNet, GlobalTemperatureAttentionNet
-from miprop.mil.networks.modules.base import BaseRegressor
-from miprop.mil.networks.modules.dynamic import DynamicPoolingNet
-from miprop.mil.networks.modules.gaussian import GaussianPoolingGlobalNet
-from miprop.mil.networks.modules.regular import InstanceNet, BagNet
+from miprop.mil.networks.modules.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
+    TemperatureAttentionNetwork, GumbelAttentionNetwork, GlobalTemperatureAttentionNetwork
+from miprop.mil.networks.modules.base import BaseRegressor, add_padding
+from miprop.mil.networks.modules.dynamic import DynamicPoolingNetwork
+from miprop.mil.networks.modules.gaussian import GaussianPoolingNetwork
+from miprop.mil.networks.modules.hopfield import HopfieldNetwork
+from miprop.mil.networks.modules.regular import InstanceNetwork, BagNetwork
 
 
-class AttentionNetRegressor(AttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class AttentionNetworkRegressor(AttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class SelfAttentionNetRegressor(SelfAttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class SelfAttentionNetworkRegressor(SelfAttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class GatedAttentionNetRegressor(GatedAttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class GatedAttentionNetworkRegressor(GatedAttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class TemperatureAttentionNetRegressor(TemperatureAttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class TemperatureAttentionNetworkRegressor(TemperatureAttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class GumbelAttentionNetRegressor(GumbelAttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class GumbelAttentionNetworkRegressor(GumbelAttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class GlobalTemperatureAttentionNetRegressor(GlobalTemperatureAttentionNet, BaseRegressor):
-    def __init__(self):
-        super().__init__()
+class GlobalTemperatureAttentionNetworkRegressor(GlobalTemperatureAttentionNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class InstanceNetRegressor(InstanceNet, BaseRegressor):
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(ndim=ndim, pool=pool, init_cuda=init_cuda)
+class InstanceNetworkRegressor(InstanceNetwork, BaseRegressor):
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(pool=pool, **kwargs)
         self.pool = pool
 
-    def name(self):
-        return '{}{}'.format(self.__class__.__name__, self.pool.capitalize())
+
+class BagNetworkRegressor(BagNetwork, BaseRegressor):
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(pool=pool, **kwargs)
 
 
-class BagNetRegressor(BagNet, BaseRegressor):
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(ndim=ndim, pool=pool, init_cuda=init_cuda)
+class GaussianPoolingNetworkRegressor(GaussianPoolingNetwork, BaseRegressor):
+    def __init__(self, pool='lse', **kwargs):
+        super().__init__(pool=pool, **kwargs)
 
 
-class GPGlobalNetRegressor(GaussianPoolingGlobalNet, BaseRegressor):
-    def __init__(self, ndim=None, det_ndim=None, pool='lse', init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, pool=pool, init_cuda=init_cuda)
-
-
-class DynamicPoolingNetRegressor(DynamicPoolingNet, BaseRegressor):
-    def __init__(self, ndim=None, init_cuda=True):
-        super().__init__(ndim=ndim, init_cuda=init_cuda)
+class DynamicPoolingNetworkRegressor(DynamicPoolingNetwork, BaseRegressor):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _train_val_split(self, x, y, val_size=0.2, random_state=42):
         x, y = np.asarray(x), np.asarray(y)
@@ -76,3 +74,8 @@ class DynamicPoolingNetRegressor(DynamicPoolingNet, BaseRegressor):
         x_train, y_train, m_train = self._array_to_tensor(x_train, y_train, m_train)
         x_val, y_val, m_val = self._array_to_tensor(x_val, y_val, m_val)
         return x_train, x_val, y_train, y_val, m_train, m_val
+
+
+class HopfieldNetworkRegressor(HopfieldNetwork, BaseRegressor):
+    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
+        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)

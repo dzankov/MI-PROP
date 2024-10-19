@@ -1,41 +1,20 @@
-from torch import nn
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
-from miprop.mil.networks.modules.base import BaseNet, BaseClassifier, MainNet
+from miprop.mil.networks.modules.base import BaseNetwork, BaseClassifier, MainNet, Pooling
 
 
-class Pooling(nn.Module):
-    def __init__(self, pool='mean'):
-        super().__init__()
+class BagNetwork(BaseNetwork):
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(**kwargs)
         self.pool = pool
 
-    def forward(self, x, m):
-        x = m * x
-        if self.pool == 'mean':
-            out = x.sum(axis=1) / m.sum(axis=1)
-        elif self.pool == 'max':
-            out = x.max(dim=1)[0]
-        elif self.pool == 'lse':
-            out = x.exp().sum(dim=1).log()
-        return out
-
-    def extra_repr(self):
-        return 'Pooling(out_dim=1)'
-
-
-class BagNet(BaseNet):
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(init_cuda=init_cuda)
-        self.main_net = MainNet(ndim)
-        self.pooling = Pooling(pool)
-        self.estimator = Linear(ndim[-1], 1)
+    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
+        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
+        self.pooling = Pooling(self.pool)
+        self.estimator = Linear(hidden_layer_sizes[-1], 1)
 
         if self.init_cuda:
             self.main_net.cuda()
             self.estimator.cuda()
-
-    def reset_weights(self):
-        self.main_net.apply(self._reset_params)
-        self.estimator.apply(self._reset_params)
 
     def forward(self, x, m):
         out = self.main_net(x)
@@ -46,18 +25,18 @@ class BagNet(BaseNet):
         return None, out
 
 
-class InstanceNet(BaseNet):
+class InstanceNetwork(BaseNetwork):
 
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(init_cuda=init_cuda)
-        self.main_net = Sequential(MainNet(ndim), Linear(ndim[-1], 1))
-        self.pooling = Pooling(pool)
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(**kwargs)
+        self.pool = pool
+
+    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
+        self.main_net = Sequential(MainNet((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
+        self.pooling = Pooling(self.pool)
 
         if self.init_cuda:
             self.main_net.cuda()
-
-    def reset_weights(self):
-        self.main_net.apply(self._reset_params)
 
     def forward(self, x, m):
         out = self.main_net(x)

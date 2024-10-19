@@ -2,15 +2,12 @@ import torch
 from torch import nn
 from torch.nn import Sequential, Linear, Sigmoid, Softmax, Tanh, ReLU
 from torch.nn.functional import softmax
-from miprop.mil.networks.modules.base import BaseClassifier, BaseNet, MainNet
+from miprop.mil.networks.modules.base import BaseClassifier, BaseNetwork, MainNet
 
 
-# from .modules import HopfieldPooling
-
-
-class AttentionNet(BaseNet):
-    def __init__(self):
-        super().__init__()
+class AttentionNetwork(BaseNetwork):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
@@ -19,7 +16,6 @@ class AttentionNet(BaseNet):
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
         #
         input_dim = hidden_layer_sizes[-1]
-        # input_dim = ndim[0]
         attention = []
         for dim in det_ndim:
             attention.append(Linear(input_dim, dim))
@@ -38,7 +34,7 @@ class AttentionNet(BaseNet):
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
         w = Softmax(dim=2)(x_det)
-        w = WeightsDropout(p=self.weight_dropout)(w)
+        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -48,16 +44,16 @@ class AttentionNet(BaseNet):
         return w, out
 
 
-class TemperatureAttentionNet(AttentionNet):
+class TemperatureAttentionNetwork(AttentionNetwork):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def forward(self, x, m):
         x = self.main_net(x)
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
-        w = Softmax(dim=2)(x_det / self.weight_dropout)
+        w = Softmax(dim=2)(x_det / self.instance_weight_dropout)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -67,10 +63,14 @@ class TemperatureAttentionNet(AttentionNet):
         return w, out
 
 
-class GlobalTemperatureAttentionNet(AttentionNet):
+class GlobalTemperatureAttentionNetwork(AttentionNetwork):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def forward(self, x, m):
-        temp = self.weight_dropout.to(x.device)
+        temp = torch.tensor(self.instance_weight_dropout).to(x.device)
+        temp.to(x.device)
 
         x = self.main_net(x)
         x_det = torch.transpose(m * self.detector(x), 2, 1)
@@ -85,20 +85,20 @@ class GlobalTemperatureAttentionNet(AttentionNet):
         return w, out
 
 
-class GumbelAttentionNet(AttentionNet):
+class GumbelAttentionNetwork(AttentionNetwork):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def forward(self, x, m):
 
         x = self.main_net(x)
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
-        if self.weight_dropout == 0:
+        if self.instance_weight_dropout == 0:
             w = Softmax(dim=2)(x_det)
         else:
-            w = nn.functional.gumbel_softmax(x_det, tau=self.weight_dropout, dim=2)
+            w = nn.functional.gumbel_softmax(x_det, tau=self.instance_weight_dropout, dim=2)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -109,9 +109,9 @@ class GumbelAttentionNet(AttentionNet):
         return w, out
 
 
-class GatedAttentionNet(AttentionNet, BaseNet):
-    def __init__(self):
-        super().__init__()
+class GatedAttentionNetwork(AttentionNetwork, BaseNetwork):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
@@ -136,7 +136,7 @@ class GatedAttentionNet(AttentionNet, BaseNet):
 
         x_det = torch.transpose(m * self.detector(w_v * w_u), 2, 1)
         w = Softmax(dim=2)(x_det)
-        w = WeightsDropout(p=self.weight_dropout)(w)
+        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -146,9 +146,9 @@ class GatedAttentionNet(AttentionNet, BaseNet):
         return w, out
 
 
-class SelfAttentionNet(BaseNet):
-    def __init__(self):
-        super().__init__()
+class SelfAttentionNetwork(BaseNetwork):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
@@ -171,7 +171,7 @@ class SelfAttentionNet(BaseNet):
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
         w = Softmax(dim=2)(x_det)
-        w = WeightsDropout(p=self.weight_dropout)(w)
+        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -179,44 +179,6 @@ class SelfAttentionNet(BaseNet):
             out = Sigmoid()(out)
         out = out.view(-1, 1)
         return w, out
-
-
-# class HopfieldNet(BaseNet):
-#     def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-#         super().__init__(init_cuda=init_cuda)
-#         self.main_net = MainNet(ndim)
-#         self.estimator = Linear(ndim[-1], 1)
-#         #
-#         input_dim = ndim[-1]
-#         self.pooling = HopfieldPooling(input_size=input_dim, hidden_size=input_dim, output_size=input_dim, num_heads=4)
-#
-#         if init_cuda:
-#             self.main_net.cuda()
-#             self.pooling.cuda()
-#             self.estimator.cuda()
-#
-#     def forward(self, x, m):
-#         x = self.main_net(x)
-#
-#         x = self.pooling(x)
-#
-#         x = x.view(-1, 1, x.shape[-1])
-#
-#         out = self.estimator(x)
-#         if isinstance(self, BaseClassifier):
-#             out = Sigmoid()(out)
-#         out = out.view(-1, 1)
-#         w = None
-#         return w, out
-
-# class HopfieldNetClassifier(HopfieldNet, BaseClassifier):
-#     def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-#         super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
-#
-#
-# class HopfieldNetRegressor(HopfieldNet, BaseRegressor):
-#     def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-#         super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
 
 
 class SelfAttention(nn.Module):
@@ -239,7 +201,7 @@ class SelfAttention(nn.Module):
         return outputs
 
 
-class WeightsDropout(nn.Module):
+class InstanceWeightDropout(nn.Module):
     def __init__(self, p=0.5):
         super().__init__()
         self.p = p
@@ -257,3 +219,5 @@ class WeightsDropout(nn.Module):
         d1 = [i[0].nonzero().flatten().tolist() for i in w_new]
         w_new[d0, :, d1] = Softmax(dim=1)(w_new[d0, :, d1])
         return w_new
+
+

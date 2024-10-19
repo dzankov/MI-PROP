@@ -61,14 +61,14 @@ def get_mini_batches(x, y, m, batch_size=16):
     return mb
 
 
-class BaseNet(nn.Module):
+class BaseNetwork(nn.Module):
     def __init__(self,
                  hidden_layer_sizes=(128,),
                  num_epoch=500,
                  batch_size=128,
                  learning_rate=0.001,
                  weight_decay=0,
-                 weight_dropout=0,
+                 instance_weight_dropout=0,
                  verbose=False,
                  init_cuda=True):
 
@@ -78,7 +78,7 @@ class BaseNet(nn.Module):
         self.num_epoch = num_epoch
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.weight_dropout = weight_dropout
+        self.instance_weight_dropout = instance_weight_dropout
         self.batch_size = batch_size
         self.init_cuda = init_cuda
         self.verbose = verbose
@@ -129,7 +129,7 @@ class BaseNet(nn.Module):
         return None, out
 
     def fit(self, x, y):
-        input_layer_size = x[0].shape[-1]
+        input_layer_size = x[0].shape[-1] # TODO make consistent: x.shape[-1]
         self._initialize(input_layer_size=input_layer_size,
                          hidden_layer_sizes=self.hidden_layer_sizes,
                          init_cuda=self.init_cuda)
@@ -180,3 +180,22 @@ class BaseNet(nn.Module):
         w = w.view(w.shape[0], w.shape[-1]).cpu()
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
+
+
+class Pooling(nn.Module):
+    def __init__(self, pool='mean'):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, x, m):
+        x = m * x
+        if self.pool == 'mean':
+            out = x.sum(axis=1) / m.sum(axis=1)
+        elif self.pool == 'max':
+            out = x.max(dim=1)[0]
+        elif self.pool == 'lse':
+            out = x.exp().sum(dim=1).log()
+        return out
+
+    def extra_repr(self):
+        return 'Pooling(out_dim=1)'
