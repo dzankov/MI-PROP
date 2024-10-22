@@ -6,13 +6,7 @@ from torch.utils.data import DataLoader
 from torch.nn import Sigmoid, Linear, ReLU, Sequential
 from sklearn.model_selection import train_test_split
 from miprop.mil.networks.modules.utils import MBSplitter
-
-
-class EntropyRegularizer(nn.Module):
-    def forward(self, w):
-        ent = -1.0 * (w * w.log2()).sum(axis=1)
-        reg = ent.mean()
-        return reg
+from tqdm import tqdm
 
 
 class BaseClassifier:
@@ -27,47 +21,14 @@ class BaseRegressor:
         return total_loss
 
 
-class MainNet:
-    def __new__(cls, hidden_layer_sizes):
-        inp_dim = hidden_layer_sizes[0]
-        net = []
-        for dim in hidden_layer_sizes[1:]:
-            net.append(Linear(inp_dim, dim))
-            net.append(ReLU())
-            inp_dim = dim
-        net = Sequential(*net)
-        return net
-
-
-def add_padding(x):
-    bag_size = max(len(i) for i in x)
-    mask = np.ones((len(x), bag_size, 1))
-
-    out = []
-    for i, bag in enumerate(x):
-        bag = np.asarray(bag)
-        if len(bag) < bag_size:
-            mask[i][len(bag):] = 0
-            padding = np.zeros((bag_size - bag.shape[0], bag.shape[1]))
-            bag = np.vstack((bag, padding))
-        out.append(bag)
-    out_bags = np.asarray(out)
-    return out_bags, mask
-
-
-def get_mini_batches(x, y, m, batch_size=16):
-    data = MBSplitter(x, y, m)
-    mb = DataLoader(data, batch_size=batch_size, shuffle=True)
-    return mb
-
 
 class BaseNetwork(nn.Module):
     def __init__(self,
-                 hidden_layer_sizes=(128,),
+                 hidden_layer_sizes=(256, 128, 64),
                  num_epoch=500,
                  batch_size=128,
                  learning_rate=0.001,
-                 weight_decay=0,
+                 weight_decay=0.001,
                  instance_weight_dropout=0,
                  verbose=False,
                  init_cuda=True):
@@ -86,12 +47,8 @@ class BaseNetwork(nn.Module):
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
         pass
 
-    def _reset_params(self, m):
-        if isinstance(m, nn.Linear):
-            m.reset_parameters()
-
     def _train_val_split(self, x, y, val_size=0.2, random_state=42):
-        x, y = np.asarray(x), np.asarray(y)
+        x, y = np.asarray(x, dtype="object"), np.asarray(y, dtype="object")
         x, m = add_padding(x)
 
         x_train, x_val, y_train, y_val, m_train, m_val = train_test_split(x, y, m, test_size=val_size,
@@ -138,7 +95,13 @@ class BaseNetwork(nn.Module):
         optimizer = optim.Yogi(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
 
         val_loss = []
-        for epoch in range(self.num_epoch):
+        # for epoch in range(self.num_epoch):
+        for epoch in tqdm(range(self.num_epoch),
+                          total=self.num_epoch,
+                          desc=f"{self.__class__.__name__} training: ",
+                          bar_format="{desc}{n}/{total} [{elapsed}]",
+                          ):
+
             mb = get_mini_batches(x_train, y_train, m_train, batch_size=self.batch_size)
             self.train()
             for x_mb, y_mb, m_mb in mb:
@@ -158,7 +121,7 @@ class BaseNetwork(nn.Module):
         return self
 
     def predict(self, x):
-        x, m = add_padding(np.asarray(x))
+        x, m = add_padding(np.asarray(x, dtype="object"))
         x = torch.from_numpy(x.astype('float32'))
         m = torch.from_numpy(m.astype('float32'))
         self.eval()
@@ -169,7 +132,7 @@ class BaseNetwork(nn.Module):
         return np.asarray(y_pred.cpu())
 
     def get_instance_weights(self, x):
-        x, m = add_padding(np.asarray(x))
+        x, m = add_padding(np.asarray(x, dtype="object"))
         x = torch.from_numpy(x.astype('float32'))
         m = torch.from_numpy(m.astype('float32'))
         self.eval()
@@ -180,6 +143,18 @@ class BaseNetwork(nn.Module):
         w = w.view(w.shape[0], w.shape[-1]).cpu()
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
+
+
+class MainNetwork:
+    def __new__(cls, hidden_layer_sizes):
+        inp_dim = hidden_layer_sizes[0]
+        net = []
+        for dim in hidden_layer_sizes[1:]:
+            net.append(Linear(inp_dim, dim))
+            net.append(ReLU())
+            inp_dim = dim
+        net = Sequential(*net)
+        return net
 
 
 class Pooling(nn.Module):
@@ -199,3 +174,29 @@ class Pooling(nn.Module):
 
     def extra_repr(self):
         return 'Pooling(out_dim=1)'
+
+
+def add_padding(x):
+    bag_size = max(len(i) for i in x)
+    mask = np.ones((len(x), bag_size, 1))
+
+    out = []
+    for i, bag in enumerate(x):
+        bag = np.asarray(bag)
+        if len(bag) < bag_size:
+            mask[i][len(bag):] = 0
+            padding = np.zeros((bag_size - bag.shape[0], bag.shape[1]))
+            bag = np.vstack((bag, padding))
+        out.append(bag)
+    out_bags = np.asarray(out)
+    return out_bags, mask
+
+
+def get_mini_batches(x, y, m, batch_size=16):
+    data = MBSplitter(x, y, m)
+    mb = DataLoader(data, batch_size=batch_size, shuffle=True)
+    return mb
+
+
+
+

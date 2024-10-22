@@ -2,6 +2,7 @@ import pandas as pd
 from rdkit.Chem import Descriptors3D
 import numpy as np
 from sklearn.impute import SimpleImputer
+from tqdm import tqdm
 from . import Descriptor
 
 
@@ -22,10 +23,15 @@ class RDKitDescriptor(Descriptor):
 
     def calc_descriptors_for_list_of_mols(self, list_of_mols):
         list_of_descr = []
-        for mol_id, mol in enumerate(list_of_mols):
+        # for mol_id, mol in enumerate(list_of_mols):
+        for mol_id, mol in tqdm(enumerate(list_of_mols),
+                                total=len(list_of_mols),
+                                desc=f"{self.__class__.__name__} descriptor calculation: ",
+                                bar_format="{desc}{n}/{total} [{elapsed}]",
+                                ):
+
             mol_descr = self._mol_to_descr(mol)
             mol_descr = mol_descr.set_index([pd.Index([mol_id for _ in mol_descr.index])])
-            #
             list_of_descr.append(mol_descr)
         #
         df_descr = pd.concat(list_of_descr)
@@ -36,6 +42,12 @@ class RDKitDescriptor(Descriptor):
             df_descr[:] = imp.fit_transform(df_descr) # TODO this is only a temporary solution, so should be revised
 
         return df_descr
+
+    def calc_descriptors_for_dataset(self, dataset):
+        list_of_mols = dataset.get_molecules()
+        df_descr = self.calc_descriptors_for_list_of_mols(list_of_mols)
+        return df_descr
+
 
 
 class RDKitGENERAL(RDKitDescriptor):

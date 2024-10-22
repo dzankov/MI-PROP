@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import Sequential, Linear, Sigmoid, Softmax, Tanh, ReLU
 from torch.nn.functional import softmax
-from miprop.mil.networks.modules.base import BaseClassifier, BaseNetwork, MainNet
+from miprop.mil.networks.modules.base import BaseClassifier, BaseNetwork, MainNetwork
 
 
 class AttentionNetwork(BaseNetwork):
@@ -12,7 +12,7 @@ class AttentionNetwork(BaseNetwork):
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
         det_ndim = (128,)
-        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
+        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
         #
         input_dim = hidden_layer_sizes[-1]
@@ -116,7 +116,7 @@ class GatedAttentionNetwork(AttentionNetwork, BaseNetwork):
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
         det_ndim = (128,)
-        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
+        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
         self.attention_V = Sequential(Linear(hidden_layer_sizes[-1], det_ndim[0]), Tanh())
         self.attention_U = Sequential(Linear(hidden_layer_sizes[-1], det_ndim[0]), Sigmoid())
         self.detector = Linear(det_ndim[0], 1)
@@ -153,7 +153,7 @@ class SelfAttentionNetwork(BaseNetwork):
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
 
         det_ndim = (128,)
-        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
+        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
         self.self_attention = SelfAttention(hidden_layer_sizes[-1], hidden_layer_sizes[-1])
         self.detector = Sequential(Linear(hidden_layer_sizes[-1], det_ndim[0]), Tanh(), Linear(det_ndim[0], 1))
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
@@ -221,3 +221,8 @@ class InstanceWeightDropout(nn.Module):
         return w_new
 
 
+class EntropyRegularizer(nn.Module):
+    def forward(self, w):
+        ent = -1.0 * (w * w.log2()).sum(axis=1)
+        reg = ent.mean()
+        return reg

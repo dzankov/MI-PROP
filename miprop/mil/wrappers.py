@@ -37,7 +37,6 @@ class BagWrapper:
         return preds
 
 
-
 class InstanceWrapper:
 
     def __init__(self, estimator, pool='mean'):

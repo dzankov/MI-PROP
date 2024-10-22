@@ -1,5 +1,5 @@
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
-from miprop.mil.networks.modules.base import BaseNetwork, BaseClassifier, MainNet, Pooling
+from miprop.mil.networks.modules.base import BaseNetwork, BaseClassifier, MainNetwork, Pooling
 
 
 class BagNetwork(BaseNetwork):
@@ -8,7 +8,7 @@ class BagNetwork(BaseNetwork):
         self.pool = pool
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = MainNet((input_layer_size, *hidden_layer_sizes))
+        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
         self.pooling = Pooling(self.pool)
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
 
@@ -32,7 +32,7 @@ class InstanceNetwork(BaseNetwork):
         self.pool = pool
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = Sequential(MainNet((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
+        self.main_net = Sequential(MainNetwork((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
         self.pooling = Pooling(self.pool)
 
         if self.init_cuda:

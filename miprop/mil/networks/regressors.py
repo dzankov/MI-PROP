@@ -62,7 +62,7 @@ class DynamicPoolingNetworkRegressor(DynamicPoolingNetwork, BaseRegressor):
         super().__init__(**kwargs)
 
     def _train_val_split(self, x, y, val_size=0.2, random_state=42):
-        x, y = np.asarray(x), np.asarray(y)
+        x, y = np.asarray(x, dtype="object"), np.asarray(y, dtype="object")
         x, m = add_padding(x)
         x_train, x_val, y_train, y_val, m_train, m_val = train_test_split(x, y, m, test_size=val_size,
                                                                           random_state=random_state)

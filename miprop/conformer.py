@@ -1,6 +1,8 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem
-import os, time
+import os
+import time
+from tqdm import tqdm
 import sys
 import gzip
 import argparse
@@ -17,11 +19,12 @@ RDLogger.DisableLog('rdApp.*')
 
 
 class ConformerGenerator:
-    def __init__(self, num_conf=10, e_thresh=None):
+    def __init__(self, num_conf=10, e_thresh=None, n_cpu=1):
         super().__init__()
 
         self.num_conf = num_conf
         self.e_thresh = e_thresh
+        self.n_cpu = n_cpu
 
     def _prepare_molecule(self, mol):
         pass
@@ -42,11 +45,26 @@ class ConformerGenerator:
         return mol
 
     def generate_conformers_for_list_of_mols(self, list_of_mols):
+
         list_of_mols_with_confs = []
-        for mol in list_of_mols:
+        for mol in tqdm(list_of_mols,
+                        total=len(list_of_mols),
+                        desc=f"{self.__class__.__name__} conformer generation: ",
+                        bar_format="{desc}{n}/{total} [{elapsed}]",
+                        ):
             mol = self._generate_conformers(mol)
             list_of_mols_with_confs.append(mol)
         return list_of_mols_with_confs
+
+    def generate_conformers_for_dataset(self, dataset):
+        for record in tqdm(dataset.data,
+                           total=len(dataset.data),
+                           desc=f"{self.__class__.__name__} conformer generation: ",
+                           bar_format="{desc}{n}/{total} [{elapsed}]",
+                           ):
+            record['mol'] = self._generate_conformers(record['mol']) # TODO check if conf gen fails or no confs
+        dataset.calc_conformer_stats()
+        return dataset
 
     def transform(self, list_of_mols):
         return self.generate_conformers_for_list_of_mols(list_of_mols)

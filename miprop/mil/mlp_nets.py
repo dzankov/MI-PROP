@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torch.nn import Sigmoid, Linear
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
-from miprop.mil.networks.modules.base import MainNet
+from miprop.mil.networks.modules.base import MainNetwork
 
 
 class MBSplitter(Dataset):
@@ -39,7 +39,7 @@ class MLP(nn.Module):
     def __init__(self, ndim=None, init_cuda=False):
         super().__init__()
         self.init_cuda = init_cuda
-        self.main_net = MainNet(ndim)
+        self.main_net = MainNetwork(ndim)
         self.estimator = Linear(ndim[-1], 1)
 
         if self.init_cuda:
