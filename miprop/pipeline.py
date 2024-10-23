@@ -1,6 +1,6 @@
 from copy import deepcopy
 from miprop.conformer import ConformerGenerator
-from miprop.descriptor import Descriptor
+from miprop.descriptor.base import Descriptor
 from miprop.scaler import BagScaler
 from miprop.mil.networks.modules.base import BaseRegressor, BaseClassifier
 

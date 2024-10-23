@@ -95,12 +95,7 @@ class BaseNetwork(nn.Module):
         optimizer = optim.Yogi(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
 
         val_loss = []
-        # for epoch in range(self.num_epoch):
-        for epoch in tqdm(range(self.num_epoch),
-                          total=self.num_epoch,
-                          desc=f"{self.__class__.__name__} training: ",
-                          bar_format="{desc}{n}/{total} [{elapsed}]",
-                          ):
+        for epoch in range(self.num_epoch):
 
             mb = get_mini_batches(x_train, y_train, m_train, batch_size=self.batch_size)
             self.train()

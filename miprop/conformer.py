@@ -1,30 +1,21 @@
-from rdkit import Chem
-from rdkit.Chem import AllChem
-import os
-import time
 from tqdm import tqdm
 import sys
-import gzip
-import argparse
-import pickle
-from itertools import combinations
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from multiprocessing import Pool, cpu_count
 from openbabel import pybel, openbabel
-
 from rdkit import RDLogger
+from joblib import Parallel, delayed
 
 RDLogger.DisableLog('rdApp.*')
 
 
 class ConformerGenerator:
-    def __init__(self, num_conf=10, e_thresh=None, n_cpu=1):
+    def __init__(self, num_conf=10, e_thresh=None, num_cpu=1):
         super().__init__()
 
         self.num_conf = num_conf
         self.e_thresh = e_thresh
-        self.n_cpu = n_cpu
+        self.num_cpu = num_cpu
 
     def _prepare_molecule(self, mol):
         pass
@@ -40,42 +31,43 @@ class ConformerGenerator:
     def _generate_conformers(self, mol):
         mol = self._embedd_conformers(mol)
         mol = self._optimize_conformers(mol)
+        if not mol.GetNumConformers():
+            return mol
         if self.e_thresh:
             mol = filter_by_energy(mol, self.e_thresh)
         return mol
 
-    def generate_conformers_for_list_of_mols(self, list_of_mols):
+    def generate_conformers_for_mols(self, list_of_mols):
 
+        futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(mol) for mol in list_of_mols)
         list_of_mols_with_confs = []
-        for mol in tqdm(list_of_mols,
-                        total=len(list_of_mols),
-                        desc=f"{self.__class__.__name__} conformer generation: ",
-                        bar_format="{desc}{n}/{total} [{elapsed}]",
-                        ):
-            mol = self._generate_conformers(mol)
-            list_of_mols_with_confs.append(mol)
+        for mol in futures:
+            if not mol.GetNumConformers():
+                continue
+        list_of_mols_with_confs.append(mol)
         return list_of_mols_with_confs
 
     def generate_conformers_for_dataset(self, dataset):
-        for record in tqdm(dataset.data,
-                           total=len(dataset.data),
-                           desc=f"{self.__class__.__name__} conformer generation: ",
-                           bar_format="{desc}{n}/{total} [{elapsed}]",
-                           ):
-            record['mol'] = self._generate_conformers(record['mol']) # TODO check if conf gen fails or no confs
+
+        futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(record['mol']) for record in dataset.data)
+        list_of_records = []
+        for n, record in enumerate(dataset.data):
+            mol = futures[n]
+            if not mol.GetNumConformers():
+                continue
+            record['mol'] = mol
+            list_of_records.append(record)
+        dataset.data = list_of_records
         dataset.calc_conformer_stats()
         return dataset
 
     def transform(self, list_of_mols):
-        return self.generate_conformers_for_list_of_mols(list_of_mols)
+        return self.generate_conformers_for_mols(list_of_mols)
 
 
 class RDKitConformerGenerator(ConformerGenerator):
-    def __init__(self, num_conf=10, e_thresh=None):
-        super().__init__()
-
-        self.num_conf = num_conf
-        self.e_thresh = e_thresh
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def _prepare_molecule(self, mol):
         mol = Chem.AddHs(mol)
@@ -88,10 +80,8 @@ class RDKitConformerGenerator(ConformerGenerator):
 
 
 class BabelConformerGenerator(ConformerGenerator):
-    def __init__(self, num_conf=10):
-        super().__init__()
-
-        self.num_conf = num_conf
+    def __init__(self, **kwargs):
+        super().__init__( *kwargs)
 
     def _prepare_molecule(self, mol):
         mol_rdkit = Chem.AddHs(mol)
