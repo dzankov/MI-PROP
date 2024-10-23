@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import Sequential, Linear, Sigmoid, Softmax, Tanh, ReLU
 from torch.nn.functional import softmax
-from miprop.mil.networks.modules.base import BaseClassifier, BaseNetwork, MainNetwork
+from miprop.mil.network.module.base import BaseClassifier, BaseNetwork, MainNetwork
 
 
 class AttentionNetwork(BaseNetwork):

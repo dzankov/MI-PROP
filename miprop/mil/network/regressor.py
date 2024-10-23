@@ -2,13 +2,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from miprop.mil.networks.modules.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
+from miprop.mil.network.module.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
     TemperatureAttentionNetwork, GumbelAttentionNetwork, GlobalTemperatureAttentionNetwork
-from miprop.mil.networks.modules.base import BaseRegressor, add_padding
-from miprop.mil.networks.modules.dynamic import DynamicPoolingNetwork
-from miprop.mil.networks.modules.gaussian import GaussianPoolingNetwork
-from miprop.mil.networks.modules.hopfield import HopfieldNetwork
-from miprop.mil.networks.modules.regular import InstanceNetwork, BagNetwork
+from miprop.mil.network.module.base import BaseRegressor, add_padding
+from miprop.mil.network.module.dynamic import DynamicPoolingNetwork
+from miprop.mil.network.module.gaussian import GaussianPoolingNetwork
+from miprop.mil.network.module.hopfield import HopfieldNetwork
+from miprop.mil.network.module.classic import InstanceNetwork, BagNetwork
 
 
 class AttentionNetworkRegressor(AttentionNetwork, BaseRegressor):

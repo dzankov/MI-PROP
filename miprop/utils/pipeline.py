@@ -1,8 +1,7 @@
-from copy import deepcopy
-from miprop.conformer import ConformerGenerator
-from miprop.descriptor.base import Descriptor
-from miprop.scaler import BagScaler
-from miprop.mil.networks.modules.base import BaseRegressor, BaseClassifier
+from miprop.conformer_generation import ConformerGenerator
+from miprop.descriptor_3d.base import Descriptor
+from miprop.utils.scaler import BagScaler
+from miprop.mil.network.module.base import BaseRegressor, BaseClassifier
 
 
 class Pipeline:

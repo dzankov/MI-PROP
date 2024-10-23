@@ -1,7 +1,7 @@
 import torch
 from torch.nn import Sequential, Linear, Sigmoid, ReLU
-from miprop.mil.networks.modules.base import BaseNetwork, BaseClassifier, Pooling
-from miprop.mil.networks.modules.base import MainNetwork
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, Pooling
+from miprop.mil.network.module.base import MainNetwork
 
 
 class GaussianPoolingNetwork(BaseNetwork):

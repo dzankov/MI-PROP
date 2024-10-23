@@ -2,8 +2,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch.nn import Softmax
-from miprop.mil.networks.modules.base import BaseNetwork, BaseRegressor
-from miprop.mil.networks.modules.base import MainNetwork
+from miprop.mil.network.module.base import BaseNetwork, BaseRegressor
+from miprop.mil.network.module.base import MainNetwork
 
 
 class MarginLoss(nn.Module):

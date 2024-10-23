@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.impute import SimpleImputer
 from tqdm import tqdm
 
-from miprop.descriptor.base import Descriptor
+from miprop.descriptor_3d.base import Descriptor
 
 np.seterr(divide='ignore')
 
@@ -24,8 +24,9 @@ class RDKitDescriptor(Descriptor):
 
     def _mol_to_descr(self, mol):
         desc_dict = {}
+        desc_function = getattr(Descriptors3D.rdMolDescriptors, self.desc_name)
         for conf in mol.GetConformers():
-            desc_vector = getattr(Descriptors3D.rdMolDescriptors, self.desc_name)(mol, confId=conf.GetId()) # TODO implement the validate descriptor functim (nan, e+287, etc)
+            desc_vector = desc_function(mol, confId=conf.GetId())  # TODO implement the validate descriptor_3d functim (nan, e+287, etc)
             desc_vector = validate_desc_vector(desc_vector)
             desc_dict[conf.GetId()] = desc_vector
         #
@@ -61,7 +62,6 @@ class RDKitDescriptor(Descriptor):
         return df_descr
 
 
-
 class RDKitGENERAL(RDKitDescriptor):
     def __init__(self):
         super().__init__('RDKitGENERAL')
@@ -81,9 +81,10 @@ class RDKitGENERAL(RDKitDescriptor):
     def _mol_to_descr(self, mol):
         desc_df = pd.DataFrame()
         for desc_name in self.desc_list:
+            desc_function = getattr(Descriptors3D.rdMolDescriptors, desc_name)
             column_name = desc_name.replace('Calc', '')
             for conf in mol.GetConformers():
-                desc_value = getattr(Descriptors3D.rdMolDescriptors, desc_name)(mol, confId=conf.GetId())
+                desc_value = desc_function(mol, confId=conf.GetId())
                 desc_df.loc[conf.GetId(), column_name] = desc_value
         return desc_df
 

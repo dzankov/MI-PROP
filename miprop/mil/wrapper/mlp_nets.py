@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torch.nn import Sigmoid, Linear
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
-from miprop.mil.networks.modules.base import MainNetwork
+from miprop.mil.network.module.base import MainNetwork
 
 
 class MBSplitter(Dataset):

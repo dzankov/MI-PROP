@@ -1,5 +1,5 @@
 from torch.nn import Linear, Sigmoid
-from miprop.mil.networks.modules.base import BaseNetwork, MainNetwork, BaseClassifier
+from miprop.mil.network.module.base import BaseNetwork, MainNetwork, BaseClassifier
 
 
 class HopfieldNetwork(BaseNetwork):

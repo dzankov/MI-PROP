@@ -2,10 +2,9 @@ import torch
 import numpy as np
 from torch import nn
 import torch_optimizer as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.nn import Sigmoid, Linear, ReLU, Sequential
 from sklearn.model_selection import train_test_split
-from miprop.mil.networks.modules.utils import MBSplitter
 from tqdm import tqdm
 
 
@@ -20,6 +19,19 @@ class BaseRegressor:
         total_loss = nn.MSELoss(reduction='mean')(y_pred, y_true.reshape(-1, 1))
         return total_loss
 
+
+class MBSplitter(Dataset):
+    def __init__(self, x, y, m):
+        super(MBSplitter, self).__init__()
+        self.x = x
+        self.y = y
+        self.m = m
+
+    def __getitem__(self, i):
+        return self.x[i], self.y[i], self.m[i]
+
+    def __len__(self):
+        return len(self.y)
 
 
 class BaseNetwork(nn.Module):
@@ -193,5 +205,8 @@ def get_mini_batches(x, y, m, batch_size=16):
     return mb
 
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
 
 

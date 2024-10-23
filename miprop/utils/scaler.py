@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from pandas import DataFrame
-from .utils import df_to_list_of_bags
+from miprop.utils import df_to_list_of_bags
 
 
 class BagScaler:

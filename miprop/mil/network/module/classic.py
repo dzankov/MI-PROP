@@ -1,5 +1,5 @@
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
-from miprop.mil.networks.modules.base import BaseNetwork, BaseClassifier, MainNetwork, Pooling
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, MainNetwork, Pooling
 
 
 class BagNetwork(BaseNetwork):
