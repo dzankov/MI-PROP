@@ -2,21 +2,10 @@ import pandas as pd
 from rdkit.Chem import Descriptors3D
 import numpy as np
 from sklearn.impute import SimpleImputer
-from tqdm import tqdm
-
-from miprop.descriptor_3d.base import Descriptor
-
-np.seterr(divide='ignore')
+from miprop.descriptor_calculation.base import Descriptor, clean_nan_descr, validate_desc_vector
 
 
-def validate_desc_vector(desc_vector):
-    desc_vector = np.array(desc_vector)
-    desc_vector = np.where(np.log(abs(desc_vector)) < 20, desc_vector, np.nan)  # TODO temp solution, implement more robust one
-    desc_vector = list(desc_vector)
-    return desc_vector
-
-
-class RDKitDescriptor(Descriptor):
+class RDKitDescriptor3D(Descriptor):
     def __init__(self, desc_name):
         super().__init__()
         self.desc_name = desc_name
@@ -33,40 +22,27 @@ class RDKitDescriptor(Descriptor):
         columns = [f'{self.column_name}_{n}' for n in range(len(desc_vector))]
         return pd.DataFrame.from_dict(desc_dict, orient='index', columns=columns)
 
-    def calc_descriptors_for_mols(self, list_of_mols):
-        list_of_descr = []
-        # for mol_id, mol in enumerate(list_of_mols):
-        for mol_id, mol in tqdm(enumerate(list_of_mols),
-                                total=len(list_of_mols),
-                                desc=f"{self.__class__.__name__} descriptor calculation: ",
-                                bar_format="{desc}{n}/{total} [{elapsed}]",
-                                disable=True,
-                                ):
-
-            mol_descr = self._mol_to_descr(mol)
-            mol_descr = mol_descr.set_index([pd.Index([mol_id for _ in mol_descr.index])])
-            list_of_descr.append(mol_descr)
-        #
-        df_descr = pd.concat(list_of_descr)
-        #
-        nan_cols = list(df_descr.columns[df_descr.isnull().any(axis=0)])
-        if nan_cols:
-            imp = SimpleImputer(missing_values=np.nan, strategy='mean')
-            df_descr[:] = imp.fit_transform(df_descr)  # TODO this is only a temporary solution, so should be revised
-
+    def calc_descriptors_for_molecules(self, list_of_mols):
+        list_of_desc = []
+        for mol_id, mol in enumerate(list_of_mols):
+            mol_desc = self._mol_to_descr(mol)
+            mol_desc = mol_desc.set_index([pd.Index([mol_id for _ in mol_desc.index])])
+            list_of_desc.append(mol_desc)
+        df_descr = pd.concat(list_of_desc)
+        df_descr = clean_nan_descr(df_descr)
         return df_descr
 
     def calc_descriptors_for_dataset(self, dataset):
         list_of_mols = dataset.get_molecules()
-        df_descr = self.calc_descriptors_for_mols(list_of_mols)
+        df_descr = self.calc_descriptors_for_molecules(list_of_mols)
         return df_descr
 
 
-class RDKitGENERAL(RDKitDescriptor):
+class RDKitGENERAL3D(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('RDKitGENERAL')
 
-        self.desc_list = ['CalcAsphericity',
+        self.desc_list = ['CalcAsphericity', # TODO replace from rdkit directly
                           'CalcEccentricity',
                           'CalcInertialShapeFactor',
                           'CalcNPR1',
@@ -89,26 +65,26 @@ class RDKitGENERAL(RDKitDescriptor):
         return desc_df
 
 
-class RDKitAUTOCORR3D(RDKitDescriptor):
+class RDKitAUTOCORR3D(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcAUTOCORR3D')
 
 
-class RDKitRDF(RDKitDescriptor):
+class RDKitRDF(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcRDF')
 
 
-class RDKitMORSE(RDKitDescriptor):
+class RDKitMORSE(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcMORSE')
 
 
-class RDKitWHIM(RDKitDescriptor):
+class RDKitWHIM(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcWHIM')
 
 
-class RDKitGETAWAY(RDKitDescriptor):
+class RDKitGETAWAY(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcGETAWAY')
