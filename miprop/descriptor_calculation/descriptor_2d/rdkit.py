@@ -1,9 +1,20 @@
 from rdkit.Chem import AllChem
+import numpy as np
 import pandas as pd
 from rdkit.Chem import Descriptors
 
 from miprop.descriptor_calculation.base import Descriptor, clean_nan_descr, validate_desc_vector
 
+
+def validate_2d_dec(mol_desc):  # TODO unify with 3D descriptors
+    res = {}
+    for k, v in mol_desc.items():
+        if abs(v) >= 10 ** 10:
+            res[k] = np.nan
+        else:
+            res[k] = v
+
+    return res
 
 class RDKitDescriptor2D(Descriptor):
     def __init__(self):
@@ -16,6 +27,9 @@ class RDKitDescriptor2D(Descriptor):
         list_of_desc = []
         for mol in list_of_mols:
             mol_desc = self._mol_to_descr(mol)
+            #
+            mol_desc = validate_2d_dec(mol_desc)
+            #
             list_of_desc.append(mol_desc)
         df_desc = pd.DataFrame(list_of_desc)
         df_desc = clean_nan_descr(df_desc)

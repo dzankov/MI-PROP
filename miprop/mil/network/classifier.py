@@ -1,5 +1,5 @@
 from miprop.mil.network.module.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
-    TemperatureAttentionNetwork, GlobalTemperatureAttentionNetwork
+    TemperatureAttentionNetwork, GlobalTemperatureAttentionNetwork, GumbelAttentionNetwork
 from miprop.mil.network.module.base import BaseClassifier
 from miprop.mil.network.module.dynamic import DynamicPoolingNetwork, MarginLoss
 from miprop.mil.network.module.gaussian import GaussianPoolingNetwork
@@ -7,57 +7,57 @@ from miprop.mil.network.module.hopfield import HopfieldNetwork
 from miprop.mil.network.module.classic import BagNetwork, InstanceNetwork
 
 
-class AttentionNetClassifier(AttentionNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
+class AttentionNetworkClassifier(AttentionNetwork, BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class SelfAttentionNetClassifier(SelfAttentionNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
+class SelfAttentionNetworkClassifier(SelfAttentionNetwork, BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class GatedAttentionNetClassifier(GatedAttentionNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
+class GatedAttentionNetworkClassifier(GatedAttentionNetwork, BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class TemperatureAttentionNetworkClassifier(TemperatureAttentionNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class GlobalTemperatureAttentionNetworkClassifier(GlobalTemperatureAttentionNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class BagNetClassifier(BagNetwork, BaseClassifier):
-
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(ndim=ndim, pool=pool, init_cuda=init_cuda)
-
-
-class InstanceNetClassifier(InstanceNetwork, BaseClassifier):
-    def __init__(self, ndim=None, pool='mean', init_cuda=False):
-        super().__init__(ndim=ndim, pool=pool, init_cuda=init_cuda)
+class GumbelAttentionNetworkClassifier(GumbelAttentionNetwork, BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
-class GPNetworkClassifier(GaussianPoolingNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, pool='lse', init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, pool=pool, init_cuda=init_cuda)
+class BagNetworkClassifier(BagNetwork, BaseClassifier):
+
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(pool=pool, **kwargs)
 
 
-class DynamicPoolingNetClassifier(DynamicPoolingNetwork, BaseClassifier):
-    def __init__(self, ndim=None, init_cuda=True):
-        super().__init__(ndim=ndim, init_cuda=init_cuda)
+class InstanceNetworkClassifier(InstanceNetwork, BaseClassifier):
+    def __init__(self, pool='mean', **kwargs):
+        super().__init__(pool=pool, **kwargs)
+
+
+class GaussianPoolingNetworkClassifier(GaussianPoolingNetwork, BaseClassifier):
+    def __init__(self, pool='lse', **kwargs):
+        super().__init__(pool=pool, **kwargs)
+
+
+class DynamicPoolingNetworkClassifier(DynamicPoolingNetwork, BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def loss(self, y_pred, y_true):
         margin_loss = MarginLoss()
         loss = margin_loss(y_pred, y_true.reshape(-1, 1))
         return loss
-
-
-class HopfieldNetworkClassifier(HopfieldNetwork, BaseClassifier):
-    def __init__(self, ndim=None, det_ndim=None, init_cuda=False):
-        super().__init__(ndim=ndim, det_ndim=det_ndim, init_cuda=init_cuda)

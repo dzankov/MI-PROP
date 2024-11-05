@@ -39,8 +39,8 @@ class ConformerGenerator:
         list_of_mols_with_confs = []
         for mol in futures:
             if not mol.GetNumConformers():
-                continue
-        list_of_mols_with_confs.append(mol)
+                return None  # TODO temp solution
+            list_of_mols_with_confs.append(mol)
         return list_of_mols_with_confs
 
     def generate_conformers_for_dataset(self, dataset):

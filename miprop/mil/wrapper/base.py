@@ -55,7 +55,7 @@ class InstanceWrapper:
         return preds
 
     def fit(self, bags, labels):
-        bags = np.asarray(bags)
+        bags = np.asarray(bags, dtype="object")
         bags_modified = np.vstack(bags)
         labels_modified = np.hstack([float(lb) * np.array(np.ones(len(bag))) for bag, lb in zip(bags, labels)])
         self.estimator.fit(bags_modified, labels_modified)
@@ -64,28 +64,3 @@ class InstanceWrapper:
     def get_instance_weights(self, bags):
         w = [softmax(self.estimator.predict(bag.reshape(-1, bag.shape[-1]))) for bag in bags]
         return w
-
-
-class InstanceWrapperRegressor(InstanceWrapper):
-
-    def __init__(self, estimator, pool='mean'):
-        super().__init__(estimator=estimator, pool=pool)
-
-    def predict(self, bags):
-        preds = [self.apply_pool(self.estimator.predict(bag.reshape(-1, bag.shape[-1]))) for bag in bags]
-        return np.asarray(preds)
-
-
-class InstanceWrapperClassifier(InstanceWrapper):
-
-    def __init__(self, estimator, pool='mean'):
-        super().__init__(estimator=estimator, pool=pool)
-
-    def predict(self, bags):
-        preds = self.predict_proba(bags)
-        preds = np.where(preds > 0.5, 1, 0)
-        return preds
-
-    def predict_proba(self, bags):
-        preds = [self.apply_pool(self.estimator.predict_proba(bag.reshape(-1, bag.shape[-1]))[:, 1]) for bag in bags]
-        return np.asarray(preds)
