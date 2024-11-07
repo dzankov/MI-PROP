@@ -16,7 +16,7 @@ class InstanceWrapperClassifier(InstanceWrapper):
 
     def predict(self, bags):
         preds = self.predict_proba(bags)
-        # preds = np.where(preds > 0.5, 1, 0) # TODO temp solution
+        preds = np.where(preds > 0.5, 1, 0) # TODO temp solution
         return preds
 
     def predict_proba(self, bags):

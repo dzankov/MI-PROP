@@ -2,10 +2,11 @@ import torch
 import numpy as np
 from torch import nn
 import torch_optimizer as optim
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.nn import Sigmoid, Linear, ReLU, Sequential
 from sklearn.model_selection import train_test_split
-from tqdm import tqdm
+
+from miprop.mil.network.module.utils import MBSplitter
 
 
 class BaseClassifier:
@@ -18,20 +19,6 @@ class BaseRegressor:
     def loss(self, y_pred, y_true):
         total_loss = nn.MSELoss(reduction='mean')(y_pred, y_true.reshape(-1, 1))
         return total_loss
-
-
-class MBSplitter(Dataset):
-    def __init__(self, x, y, m):
-        super(MBSplitter, self).__init__()
-        self.x = x
-        self.y = y
-        self.m = m
-
-    def __getitem__(self, i):
-        return self.x[i], self.y[i], self.m[i]
-
-    def __len__(self):
-        return len(self.y)
 
 
 class BaseNetwork(nn.Module):
@@ -55,6 +42,9 @@ class BaseNetwork(nn.Module):
         self.batch_size = batch_size
         self.init_cuda = init_cuda
         self.verbose = verbose
+
+    def __repr__(self):
+        return str(self.__class__.__name__)
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
         pass
@@ -150,6 +140,7 @@ class BaseNetwork(nn.Module):
         w = w.view(w.shape[0], w.shape[-1]).cpu()
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
+
 
 
 class MainNetwork:

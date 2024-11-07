@@ -8,6 +8,11 @@ class BagWrapper:
         self.estimator = estimator
         self.pool = pool
 
+    def __repr__(self):
+        return f'{self.__class__.__name__}|' \
+               f'{self.estimator.__class__.__name__}|' \
+               f'{self.pool.title()}Pooling'
+
     def apply_pool(self, bags):
         if self.pool == 'mean':
             bags_modified = np.asarray([np.mean(bag, axis=0) for bag in bags])
@@ -42,6 +47,11 @@ class InstanceWrapper:
     def __init__(self, estimator, pool='mean'):
         self.estimator = estimator
         self.pool = pool
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}|' \
+               f'{self.estimator.__class__.__name__}|' \
+               f'{self.pool.title()}Pooling'
 
     def apply_pool(self, preds):
         if self.pool == 'mean':
