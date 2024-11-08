@@ -3,6 +3,9 @@ import pandas as pd
 from rdkit.Chem import Descriptors, Descriptors3D
 from sklearn.impute import SimpleImputer
 from molfeat.calc import FPCalculator
+from rdkit import Chem
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+from rdkit import DataStructs
 
 
 def clean_nan_descr(df_desc):
@@ -98,6 +101,10 @@ class RDKitDescriptor3D(Descriptor):
     def calc_descriptors_for_molecules(self, list_of_mols):
         list_of_desc = []
         for mol_id, mol in enumerate(list_of_mols):
+
+            while not mol.GetNumConformers(): # TODO temp solution
+                mol = select_closest_mol(list_of_mols, mol)
+
             mol_desc = self._mol_to_descr(mol)
             mol_desc = mol_desc.set_index([pd.Index([mol_id for _ in mol_desc.index])])
             list_of_desc.append(mol_desc)
@@ -109,3 +116,14 @@ class RDKitDescriptor3D(Descriptor):
         list_of_mols = dataset.get_molecules()
         df_descr = self.calc_descriptors_for_molecules(list_of_mols)
         return df_descr
+
+
+def select_closest_mol(list_of_mols, mol):
+    tmp = []
+    fp_gen = GetMorganGenerator(radius=3, fpSize=2048)
+    for mol_i in list_of_mols:
+        fp_gen.GetFingerprint(mol_i)
+        sim = DataStructs.TanimotoSimilarity(fp_gen.GetFingerprint(mol_i), fp_gen.GetFingerprint(mol))
+        tmp.append((mol_i, sim))
+    tmp = sorted(tmp, key=lambda x: x[1])
+    return tmp[0][0]

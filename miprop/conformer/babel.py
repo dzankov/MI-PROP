@@ -3,7 +3,7 @@ import sys
 from openbabel import pybel, openbabel
 from rdkit import Chem
 
-from miprop.conformer_generation.base import ConformerGenerator
+from miprop.conformer.base import ConformerGenerator
 
 
 class BabelConformerGenerator(ConformerGenerator):

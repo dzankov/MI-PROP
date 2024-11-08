@@ -1,5 +1,5 @@
-from miprop.conformer_generation.rdkit import ConformerGenerator
-from miprop.descriptor_calculation.base import Descriptor
+from miprop.conformer.rdkit import ConformerGenerator
+from miprop.descriptor.base import Descriptor
 from miprop.utils.scaler import BagScaler
 from miprop.mil.network.module.base import BaseRegressor, BaseClassifier
 

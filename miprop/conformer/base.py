@@ -1,3 +1,4 @@
+from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import RDLogger
 from joblib import Parallel, delayed
@@ -39,7 +40,7 @@ class ConformerGenerator:
         list_of_mols_with_confs = []
         for mol in futures:
             if not mol.GetNumConformers():
-                return None  # TODO temp solution
+                print(Chem.MolToSmiles(mol), ' Conformer generation failed')
             list_of_mols_with_confs.append(mol)
         return list_of_mols_with_confs
 
@@ -50,7 +51,7 @@ class ConformerGenerator:
         for n, record in enumerate(dataset.data):
             mol = futures[n]
             if not mol.GetNumConformers():
-                continue
+                print(Chem.MolToSmiles(mol), ' Conformer generation failed')
             record['mol'] = mol
             list_of_records.append(record)
         dataset.data = list_of_records

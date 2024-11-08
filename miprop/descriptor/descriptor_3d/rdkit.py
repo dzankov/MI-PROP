@@ -1,6 +1,6 @@
 import pandas as pd
 from rdkit.Chem import Descriptors3D
-from miprop.descriptor_calculation.base import RDKitDescriptor3D
+from miprop.descriptor.base import RDKitDescriptor3D
 
 
 class RDKitGENERAL3D(RDKitDescriptor3D):
