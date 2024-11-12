@@ -149,7 +149,12 @@ class MolFeatDescriptor3D(Descriptor): # TODO unify with Descriptor3D class
             while not mol.GetNumConformers():  # TODO temp solution
                 mol = select_closest_mol(list_of_mols, mol)
 
-            mol_desc = self._mol_to_descr(mol)
+            try:
+                mol_desc = self._mol_to_descr(mol)
+            except Exception as e:
+                mol = select_closest_mol(list_of_mols, mol) # TODO temp solution
+                print(Chem.MolToSmiles(mol), e)
+
             mol_desc = mol_desc.set_index([pd.Index([mol_id for _ in mol_desc.index])])
             list_of_desc.append(mol_desc)
         df_descr = pd.concat(list_of_desc)
