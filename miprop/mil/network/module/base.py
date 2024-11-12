@@ -142,7 +142,6 @@ class BaseNetwork(nn.Module):
         return w
 
 
-
 class MainNetwork:
     def __new__(cls, hidden_layer_sizes):
         inp_dim = hidden_layer_sizes[0]

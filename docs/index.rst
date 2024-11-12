@@ -12,4 +12,8 @@ Multi-Instance Learning
 .. toctree::
     :hidden:
 
-    pipeline
+    data
+    conformer
+    descriptor
+    algorithm
+

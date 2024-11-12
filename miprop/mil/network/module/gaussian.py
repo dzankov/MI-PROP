@@ -4,7 +4,7 @@ from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, Pooling
 from miprop.mil.network.module.base import MainNetwork
 
 
-class GaussianPoolingNetwork(BaseNetwork):
+class GaussianPoolingNetwork(BaseNetwork):  # TODO does not work when y is big (e.g. 345)
     def __init__(self, pool='lse', **kwargs):
         super().__init__(**kwargs)
         self.pool = pool

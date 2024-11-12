@@ -34,7 +34,7 @@ class AttentionNetwork(BaseNetwork):
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
         w = Softmax(dim=2)(x_det)
-        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
+        # w = InstanceWeightDropout(p=self.instance_weight_dropout)(w) # TODO does not work sometimes
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -136,7 +136,7 @@ class GatedAttentionNetwork(AttentionNetwork, BaseNetwork):
 
         x_det = torch.transpose(m * self.detector(w_v * w_u), 2, 1)
         w = Softmax(dim=2)(x_det)
-        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
+        # w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
@@ -171,7 +171,7 @@ class SelfAttentionNetwork(BaseNetwork):
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
         w = Softmax(dim=2)(x_det)
-        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
+        # w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)
