@@ -38,5 +38,7 @@ Python interface
 Documentation
 ----------------------
 
-The detailed documentation can be found here.
+The detailed documentation can be found [here](https://dzankov.github.io/MI-PROP/).
+
+
 
