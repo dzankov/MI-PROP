@@ -3,9 +3,11 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 from rdkit.Chem.rdMolDescriptors import CalcNumRotatableBonds
-
+from copy import deepcopy
 import numpy as np
 import pandas as pd
+
+from miprop.utils.logging import FailedMolecule, FailedConformer
 
 
 def load_data(file_path):
@@ -14,41 +16,43 @@ def load_data(file_path):
 
 
 def parse_data(df):
-    data = []
+    mols, labels = [], []
     for smi, label in zip(df[0], df[1]):
+        labels.append(label)
         mol = Chem.MolFromSmiles(smi)
         if mol:
-            data.append({'mol': mol, 'label': label})
-    return data
+            mols.append(mol)
+        else:
+            mols.append(FailedMolecule(smi))
+    return mols, labels
 
 
 class Dataset:
     def __init__(self, file_path=None):
         super().__init__()
         self._df = load_data(file_path)
-        self.data = parse_data(self._df)
-        self.meta = {'num_molecules': len(self.data),
-                     'mean_num_rotatable_bonds': self._calc_num_rotatable_bonds()}
+        self.molecules, self.labels = parse_data(self._df)
 
     def __len__(self):
-        return len(self.data)
+        return len(self.molecules)
 
-    def get_molecules(self):
-        return [i['mol'] for i in self.data]
+    def filter_failed_instances(self, failed_class):
+        filtered_mols, filtered_labels = [], []
+        for mol, label in zip(self.molecules, self.labels):
+            if isinstance(mol, failed_class):
+                continue
+            filtered_mols.append(mol)
+            filtered_labels.append(label)
 
-    def get_labels(self):
-        return [i['label'] for i in self.data]
+        dataset_filtered = deepcopy(self)
+        dataset_filtered.molecules = filtered_mols
+        dataset_filtered.labels = filtered_labels
+        return dataset_filtered
 
-    def _calc_num_rotatable_bonds(self):
-        avg_rb_num = np.mean([CalcNumRotatableBonds(i['mol']) for i in self.data]).item()
-        return avg_rb_num
+    def filter_failed_molecules(self):
+        return self.filter_failed_instances(FailedMolecule)
 
-    def _calc_num_conformers(self):
-        avg_conf_num = np.mean([i['mol'].GetNumConformers() for i in self.data]).item()
-        return avg_conf_num
+    def filter_failed_conformers(self):
+        return self.filter_failed_instances(FailedConformer)
 
-    def _calc_conformer_diversity(self):
-        pass
 
-    def calc_conformer_stats(self):
-        self.meta['mean_num_conformers'] = self._calc_num_conformers()

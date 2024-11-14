@@ -1,4 +1,4 @@
-from ..base import Descriptor2D, MolFeatDescriptorFP
+from ..base import Descriptor2D, MolFeatFingerprint2D
 from molfeat.calc import RDKitDescriptors2D
 from molfeat.calc import Pharmacophore2D
 from molfeat.calc import MordredDescriptors
@@ -6,17 +6,17 @@ from molfeat.calc import CATS
 from molfeat.calc import ScaffoldKeyCalculator
 
 
-class AtomPair(MolFeatDescriptorFP): #TODO add columns name
+class AtomPair(MolFeatFingerprint2D): #TODO add columns name
     def __init__(self):
         super().__init__("atompair")
 
 
-class AtomPairCount(MolFeatDescriptorFP):
+class AtomPairCount(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("atompair-count")
 
 
-class Avalon(MolFeatDescriptorFP):
+class Avalon(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("avalon")
 
@@ -26,72 +26,72 @@ class Avalon(MolFeatDescriptorFP):
 #         super().__init__("avalon-count")
 
 
-class ECFP(MolFeatDescriptorFP):
+class ECFP(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("ecfp")
 
 
-class ECFPCount(MolFeatDescriptorFP):
+class ECFPCount(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("ecfp-count")
 
 
-class ERG(MolFeatDescriptorFP):
+class ERG(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("erg")
 
 
-class Estate(MolFeatDescriptorFP):
+class Estate(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("estate")
 
 
-class FCFP(MolFeatDescriptorFP):
+class FCFP(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("fcfp")
 
 
-class FCFPCount(MolFeatDescriptorFP):
+class FCFPCount(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("fcfp-count")
 
 
-class Layered(MolFeatDescriptorFP):
+class Layered(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("layered")
 
 
-class MACCS(MolFeatDescriptorFP):
+class MACCS(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("maccs")
 
 
-class Pattern(MolFeatDescriptorFP):
+class Pattern(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("pattern")
 
 
-class RDKitFP(MolFeatDescriptorFP):
+class RDKitFP(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("rdkit")
 
 
-class RDKitFPCount(MolFeatDescriptorFP):
+class RDKitFPCount(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("rdkit-count")
 
 
-class SecFP(MolFeatDescriptorFP):
+class SecFP(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("secfp")
 
 
-class Topological(MolFeatDescriptorFP):
+class Topological(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("topological")
 
 
-class TopologicalCount(MolFeatDescriptorFP):
+class TopologicalCount(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("topological-count")
 

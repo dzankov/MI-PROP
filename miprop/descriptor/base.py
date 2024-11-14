@@ -6,6 +6,9 @@ from molfeat.calc import FPCalculator
 from rdkit import Chem
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 from rdkit import DataStructs
+from miprop.utils.dataset import Dataset
+from miprop.utils.logging import FailedMolecule, FailedConformer, FailedDescriptor
+from rdkit.Chem import Mol as RDKitMol
 
 
 def clean_nan_desc(df_desc):
@@ -51,45 +54,38 @@ class Descriptor:
     def __init__(self):
         super().__init__()
 
-    def calc_descriptors_for_molecules(self, list_of_mols):
+    def _mol_to_descr(self, mol):
         pass
 
     def transform(self, list_of_mols):
-        return self.calc_descriptors_for_molecules(list_of_mols)
+
+        if isinstance(list_of_mols, Dataset):
+            list_of_mols = list_of_mols.molecules
+
+        list_of_desc = []
+        for mol in list_of_mols:
+            x = self._mol_to_descr(mol)
+            list_of_desc.append(x)
+
+        # df_desc = pd.DataFrame(list_of_desc)
+        # df_desc = clean_nan_desc(df_desc)
+        # return df_desc
+
+        return list_of_desc
 
 
 class Descriptor2D(Descriptor):
     def __init__(self):
         super().__init__()
-        self.calc = None
-
-    def _mol_to_descr(self, mol):
-        descr = self.calc(mol)
-        return descr
-
-    def calc_descriptors_for_molecules(self, list_of_mols):
-        list_of_desc = []
-        for mol in list_of_mols:
-            mol_desc = self._mol_to_descr(mol)
-            list_of_desc.append(mol_desc)
-        df_desc = pd.DataFrame(list_of_desc)
-        df_desc = clean_nan_desc(df_desc)
-        return df_desc
-
-    def calc_descriptors_for_dataset(self, dataset):
-        list_of_mols = dataset.get_molecules()
-        df_descr = self.calc_descriptors_for_molecules(list_of_mols)
-        return df_descr
 
 
-class MolFeatDescriptorFP(Descriptor2D):
+class MolFeatFingerprint2D(Descriptor2D):
     def __init__(self, method=None):
         super().__init__()
-        self.calc = FPCalculator(method)
+        self.transformer = FPCalculator(method)
 
     def _mol_to_descr(self, mol):
-        descr = self.calc(mol)
-        return descr
+        return self.transformer(mol)
 
 
 class RDKitDescriptor3D(Descriptor):
@@ -99,37 +95,29 @@ class RDKitDescriptor3D(Descriptor):
         self.column_name = desc_name.replace('Calc', '')
 
     def _mol_to_descr(self, mol):
-        desc_dict = {}
+        bag_of_desc = []
         desc_function = getattr(Descriptors3D.rdMolDescriptors, self.desc_name)
         for conf in mol.GetConformers():
             desc_vector = desc_function(mol, confId=conf.GetId())  # TODO implement the validate descriptor_3d functim (nan, e+287, etc)
-            desc_vector = validate_desc_vector(desc_vector)
-            desc_dict[conf.GetId()] = desc_vector
-        #
-        columns = [f'{self.column_name}_{n}' for n in range(len(desc_vector))]
-        return pd.DataFrame.from_dict(desc_dict, orient='index', columns=columns)
+            # desc_vector = validate_desc_vector(desc_vector)
+            bag_of_desc.append(desc_vector)
+        return np.array(bag_of_desc)
 
-    def calc_descriptors_for_molecules(self, list_of_mols):
+    def transform(self, list_of_mols):
+
+        if isinstance(list_of_mols, Dataset):
+            list_of_mols = list_of_mols.molecules
+
         list_of_desc = []
         for mol_id, mol in enumerate(list_of_mols):
-
-            while not mol.GetNumConformers(): # TODO temp solution
-                mol = select_closest_mol(list_of_mols, mol)
-
-            mol_desc = self._mol_to_descr(mol)
-            mol_desc = mol_desc.set_index([pd.Index([mol_id for _ in mol_desc.index])])
-            list_of_desc.append(mol_desc)
-        df_descr = pd.concat(list_of_desc)
-        df_descr = clean_nan_desc(df_descr)
-        return df_descr
-
-    def calc_descriptors_for_dataset(self, dataset):
-        list_of_mols = dataset.get_molecules()
-        df_descr = self.calc_descriptors_for_molecules(list_of_mols)
-        return df_descr
+            bag_of_desc = self._mol_to_descr(mol)
+            list_of_desc.append(bag_of_desc)
+        # df_descr = pd.concat(list_of_desc)
+        # df_descr = clean_nan_desc(df_descr)
+        return list_of_desc
 
 
-class MolFeatDescriptor3D(Descriptor): # TODO unify with Descriptor3D class
+class MolFeatDescriptor3D(Descriptor):  # TODO unify with Descriptor3D class
     def __init__(self):
         super().__init__()
         self.calc = None
@@ -142,7 +130,7 @@ class MolFeatDescriptor3D(Descriptor): # TODO unify with Descriptor3D class
             desc_dict[conf.GetId()] = desc_vector
         return pd.DataFrame.from_dict(desc_dict, orient='index')
 
-    def calc_descriptors_for_molecules(self, list_of_mols):
+    def transform(self, list_of_mols):
         list_of_desc = []
         for mol_id, mol in enumerate(list_of_mols):
 
@@ -162,6 +150,9 @@ class MolFeatDescriptor3D(Descriptor): # TODO unify with Descriptor3D class
         return df_descr
 
     def calc_descriptors_for_dataset(self, dataset):
-        list_of_mols = dataset.get_molecules()
-        df_descr = self.calc_descriptors_for_molecules(list_of_mols)
+        list_of_mols = dataset.molecules()
+        df_descr = self.transform(list_of_mols)
         return df_descr
+
+
+

@@ -2,6 +2,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit import RDLogger
 from joblib import Parallel, delayed
+from miprop.utils.logging import FailedMolecule, FailedConformer
 
 RDLogger.DisableLog('rdApp.*')
 
@@ -26,36 +27,23 @@ class ConformerGenerator:
         return mol
 
     def _generate_conformers(self, mol):
-        mol = self._embedd_conformers(mol)
-        mol = self._optimize_conformers(mol)
-        if not mol.GetNumConformers():
+        if isinstance(mol, (FailedMolecule, FailedConformer)):
             return mol
+        mol = self._embedd_conformers(mol)
+        if not mol.GetNumConformers():
+            return FailedConformer(mol)
+        mol = self._optimize_conformers(mol)
         if self.e_thresh:
             mol = filter_by_energy(mol, self.e_thresh)
         return mol
 
     def generate_conformers_for_molecules(self, list_of_mols):
-
         futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(mol) for mol in list_of_mols)
-        list_of_mols_with_confs = []
-        for mol in futures:
-            if not mol.GetNumConformers():
-                print(Chem.MolToSmiles(mol), ' Conformer generation failed')
-            list_of_mols_with_confs.append(mol)
-        return list_of_mols_with_confs
+        return [mol for mol in futures]
 
     def generate_conformers_for_dataset(self, dataset):
-
-        futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(record['mol']) for record in dataset.data)
-        list_of_records = []
-        for n, record in enumerate(dataset.data):
-            mol = futures[n]
-            if not mol.GetNumConformers():
-                print(Chem.MolToSmiles(mol), ' Conformer generation failed')
-            record['mol'] = mol
-            list_of_records.append(record)
-        dataset.data = list_of_records
-        dataset.calc_conformer_stats()
+        futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(mol) for mol in dataset.molecules)
+        dataset.molecules = [mol for mol in futures]
         return dataset
 
     def transform(self, list_of_mols):
