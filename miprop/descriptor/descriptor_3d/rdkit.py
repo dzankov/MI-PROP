@@ -1,9 +1,45 @@
+import numpy as np
 import pandas as pd
 from rdkit.Chem import Descriptors3D
-from miprop.descriptor.base import RDKitDescriptor3D
+from miprop.descriptor.base import Descriptor3D
+from miprop.utils.dataset import Dataset
+from miprop.descriptor.base import validate_desc_vector
 
 
-class RDKitGENERAL3D(RDKitDescriptor3D):
+class RDKitDescriptor3D(Descriptor3D):
+    def __init__(self, desc_name):
+        super().__init__()
+        self.desc_name = desc_name
+        self.column_name = desc_name.replace('Calc', '')
+
+    def _mol_to_descr(self, mol):
+        bag_of_desc = []
+        desc_function = getattr(Descriptors3D.rdMolDescriptors, self.desc_name)
+        for conf in mol.GetConformers():
+            desc_vector = np.array(desc_function(mol, confId=conf.GetId()))  # TODO implement the validate descriptor_3d functim (nan, e+287, etc)
+
+            # desc_vector = validate_desc_vector(desc_vector)
+            desc_vector = validate_desc_vector(desc_vector)
+
+            bag_of_desc.append(desc_vector)
+
+        return np.array(bag_of_desc)
+
+    def transform(self, list_of_mols):
+
+        if isinstance(list_of_mols, Dataset):
+            list_of_mols = list_of_mols.molecules
+
+        list_of_desc = []
+        for mol_id, mol in enumerate(list_of_mols):
+            bag_of_desc = self._mol_to_descr(mol)
+            list_of_desc.append(bag_of_desc)
+        # df_descr = pd.concat(list_of_desc)
+        # df_descr = clean_nan_desc(df_descr)
+        return list_of_desc
+
+
+class RDKitGEOM(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('RDKitGENERAL')
 
@@ -27,10 +63,10 @@ class RDKitGENERAL3D(RDKitDescriptor3D):
             for conf in mol.GetConformers():
                 desc_value = desc_function(mol, confId=conf.GetId())
                 desc_df.loc[conf.GetId(), column_name] = desc_value
-        return desc_df
+        return desc_df.values
 
 
-class RDKitAUTOCORR3D(RDKitDescriptor3D):
+class RDKitAUTOCORR(RDKitDescriptor3D):
     def __init__(self):
         super().__init__('CalcAUTOCORR3D')
 

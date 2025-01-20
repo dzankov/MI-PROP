@@ -1,4 +1,4 @@
-from ..base import Descriptor2D, MolFeatFingerprint2D
+from ..base import Descriptor2D
 from molfeat.calc import RDKitDescriptors2D
 from molfeat.calc import Pharmacophore2D
 from molfeat.calc import MordredDescriptors
@@ -6,7 +6,16 @@ from molfeat.calc import CATS
 from molfeat.calc import ScaffoldKeyCalculator
 
 
-class AtomPair(MolFeatFingerprint2D): #TODO add columns name
+class MolFeatFingerprint2D(Descriptor2D):
+    def __init__(self, method=None):
+        super().__init__()
+        self.transformer = FPCalculator(method)
+
+    def _mol_to_descr(self, mol):
+        return self.transformer(mol)
+
+
+class AtomPairBinary(MolFeatFingerprint2D): #TODO add columns name
     def __init__(self):
         super().__init__("atompair")
 
@@ -16,7 +25,7 @@ class AtomPairCount(MolFeatFingerprint2D):
         super().__init__("atompair-count")
 
 
-class Avalon(MolFeatFingerprint2D):
+class AvalonBinary(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("avalon")
 
@@ -26,7 +35,7 @@ class Avalon(MolFeatFingerprint2D):
 #         super().__init__("avalon-count")
 
 
-class ECFP(MolFeatFingerprint2D):
+class ECFPBinary(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("ecfp")
 
@@ -46,7 +55,7 @@ class Estate(MolFeatFingerprint2D):
         super().__init__("estate")
 
 
-class FCFP(MolFeatFingerprint2D):
+class FCFPBinary(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("fcfp")
 
@@ -71,7 +80,7 @@ class Pattern(MolFeatFingerprint2D):
         super().__init__("pattern")
 
 
-class RDKitFP(MolFeatFingerprint2D):
+class RDKitFPBinary(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("rdkit")
 
@@ -86,7 +95,7 @@ class SecFP(MolFeatFingerprint2D):
         super().__init__("secfp")
 
 
-class Topological(MolFeatFingerprint2D):
+class TopologicalBinary(MolFeatFingerprint2D):
     def __init__(self):
         super().__init__("topological")
 
@@ -99,31 +108,31 @@ class TopologicalCount(MolFeatFingerprint2D):
 class RDKitPhysChem(Descriptor2D):
     def __init__(self):
         super().__init__()
-        self.calc = RDKitDescriptors2D(replace_nan=True)
+        self.transformer = RDKitDescriptors2D(replace_nan=True)
 
 
 class Pharmacophore(Descriptor2D):
     def __init__(self):
         super().__init__()
-        self.calc = Pharmacophore2D(replace_nan=True)
+        self.transformer = Pharmacophore2D(replace_nan=True)
 
 
 class Mordred(Descriptor2D):
     def __init__(self):
         super().__init__()
-        self.calc = MordredDescriptors(replace_nan=True)
+        self.transformer = MordredDescriptors(replace_nan=True)
 
 
 class ChemicallyAdvancedTemplateSearch(Descriptor2D):
     def __init__(self):
         super().__init__()
-        self.calc = CATS()
+        self.transformer = CATS()
 
 
 class ScaffoldKeyDescriptor(Descriptor2D):
     def __init__(self):
         super().__init__()
-        self.calc = ScaffoldKeyCalculator()
+        self.transformer = ScaffoldKeyCalculator()
 
 
 
