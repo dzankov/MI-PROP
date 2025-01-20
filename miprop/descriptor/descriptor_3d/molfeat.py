@@ -4,7 +4,7 @@ import pandas as pd
 from molfeat.calc import Pharmacophore3D
 from molfeat.calc import USRDescriptors
 from molfeat.calc import ElectroShapeDescriptors
-from miprop.descriptor.base import Descriptor3D, validate_desc_vector, select_closest_mol, validate_desc_vector
+from miprop.descriptor.base import Descriptor3D, validate_desc_vector
 
 
 class MolFeatDescriptor3D(Descriptor3D):  # TODO unify with Descriptor3D class

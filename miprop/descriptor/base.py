@@ -4,9 +4,6 @@ from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 from rdkit import DataStructs
 from miprop.utils.dataset import Dataset
 
-# nan descr
-# inf descr
-
 
 def validate_desc_vector(desc_vector):
 
@@ -19,27 +16,6 @@ def validate_desc_vector(desc_vector):
         imp = np.mean(desc_vector[abs(desc_vector) <= 10 ** 25])
         desc_vector = np.where(abs(desc_vector) <= 10 ** 25, desc_vector, imp)
     return desc_vector
-
-
-def validate_2d_desc(mol_desc):  # TODO unify with 3D descriptors
-    res = {}
-    for k, v in mol_desc.items():
-        if abs(v) >= 10 ** 10:
-            res[k] = np.nan
-        else:
-            res[k] = v
-
-    return res
-
-def select_closest_mol(list_of_mols, mol):
-    tmp = []
-    fp_gen = GetMorganGenerator(radius=3, fpSize=2048)
-    for mol_i in list_of_mols:
-        fp_gen.GetFingerprint(mol_i)
-        sim = DataStructs.TanimotoSimilarity(fp_gen.GetFingerprint(mol_i), fp_gen.GetFingerprint(mol))
-        tmp.append((mol_i, sim))
-    tmp = sorted(tmp, key=lambda x: x[1])
-    return tmp[0][0]
 
 
 class Descriptor:
