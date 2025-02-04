@@ -34,6 +34,8 @@ class BaseNetwork(nn.Module):
 
         super().__init__()
 
+        torch.manual_seed(42)  # TODO change later
+
         self.hidden_layer_sizes = hidden_layer_sizes
         self.num_epoch = num_epoch
         self.learning_rate = learning_rate
@@ -132,12 +134,14 @@ class BaseNetwork(nn.Module):
         x, m = add_padding(np.asarray(x, dtype="object"))
         x = torch.from_numpy(x.astype('float32'))
         m = torch.from_numpy(m.astype('float32'))
+
         self.eval()
         with torch.no_grad():
             if self.init_cuda:
                 x, m = x.cuda(), m.cuda()
             w, y_pred = self.forward(x, m)
         w = w.view(w.shape[0], w.shape[-1]).cpu()
+        m = m.cpu()
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
 

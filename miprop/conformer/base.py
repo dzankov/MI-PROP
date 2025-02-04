@@ -29,25 +29,23 @@ class ConformerGenerator:
     def _generate_conformers(self, mol):
         if isinstance(mol, (FailedMolecule, FailedConformer)):
             return mol
-        mol = self._embedd_conformers(mol)
-        if not mol.GetNumConformers():
+        try:
+            mol = self._embedd_conformers(mol)
+            if not mol.GetNumConformers():
+                return FailedConformer(mol)
+            mol = self._optimize_conformers(mol)
+        except:
             return FailedConformer(mol)
-        mol = self._optimize_conformers(mol)
+
         if self.e_thresh:
             mol = filter_by_energy(mol, self.e_thresh)
+
         return mol
 
-    def generate_conformers_for_molecules(self, list_of_mols):
+    def generate(self, list_of_mols):
         futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(mol) for mol in list_of_mols)
         return [mol for mol in futures]
 
-    def generate_conformers_for_dataset(self, dataset):
-        futures = Parallel(n_jobs=self.num_cpu)(delayed(self._generate_conformers)(mol) for mol in dataset.molecules)
-        dataset.molecules = [mol for mol in futures]
-        return dataset
-
-    def transform(self, list_of_mols):
-        return self.generate_conformers_for_molecules(list_of_mols)
 
 
 def filter_by_energy(mol, e_thresh=1):

@@ -1,10 +1,9 @@
-from rdkit import Chem
 import numpy as np
-import pandas as pd
 from molfeat.calc import Pharmacophore3D
 from molfeat.calc import USRDescriptors
 from molfeat.calc import ElectroShapeDescriptors
-from miprop.descriptor.base import Descriptor3D, validate_desc_vector
+from miprop.descriptor.descriptor_3d.base import Descriptor3D, validate_desc_vector
+from miprop.utils.logging import FailedDescriptor
 
 
 class MolFeatDescriptor3D(Descriptor3D):  # TODO unify with Descriptor3D class
@@ -28,7 +27,7 @@ class MolFeatDescriptor3D(Descriptor3D):  # TODO unify with Descriptor3D class
             try:
                 desc_vector = self._mol_to_descr(mol)
             except Exception as e:
-                print(Chem.MolToSmiles(mol), e)
+                desc_vector = FailedDescriptor(mol)
             list_of_desc.append(desc_vector)
 
         return list_of_desc

@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 from rdkit.Chem import Descriptors3D
-from miprop.descriptor.base import Descriptor3D
-from miprop.utils.dataset import Dataset
-from miprop.descriptor.base import validate_desc_vector
+from miprop.descriptor.descriptor_3d.base import Descriptor3D
+from miprop.descriptor.descriptor_3d.base import validate_desc_vector
+from miprop.utils.logging import FailedMolecule, FailedDescriptor, FailedConformer
 
 
 class RDKitDescriptor3D(Descriptor3D):
@@ -26,16 +26,16 @@ class RDKitDescriptor3D(Descriptor3D):
         return np.array(bag_of_desc)
 
     def transform(self, list_of_mols):
-
-        if isinstance(list_of_mols, Dataset):
-            list_of_mols = list_of_mols.molecules
-
         list_of_desc = []
         for mol_id, mol in enumerate(list_of_mols):
-            bag_of_desc = self._mol_to_descr(mol)
-            list_of_desc.append(bag_of_desc)
-        # df_descr = pd.concat(list_of_desc)
-        # df_descr = clean_nan_desc(df_descr)
+            if isinstance(mol, (FailedMolecule, FailedConformer)):
+                desc_vector = mol
+            try:
+                desc_vector = self._mol_to_descr(mol)
+            except Exception as e:
+                desc_vector = FailedDescriptor(mol)
+            list_of_desc.append(desc_vector)
+
         return list_of_desc
 
 

@@ -34,7 +34,8 @@ class AttentionNetwork(BaseNetwork):
         x_det = torch.transpose(m * self.detector(x), 2, 1)
 
         w = Softmax(dim=2)(x_det)
-        # w = InstanceWeightDropout(p=self.instance_weight_dropout)(w) # TODO does not work sometimes
+
+        w = InstanceWeightDropout(p=self.instance_weight_dropout)(w)
 
         x = torch.bmm(w, x)
         out = self.estimator(x)

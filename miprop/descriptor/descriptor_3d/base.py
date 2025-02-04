@@ -1,7 +1,4 @@
 import numpy as np
-from sklearn.impute import SimpleImputer
-from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
-from rdkit import DataStructs
 from miprop.utils.dataset import Dataset
 
 
@@ -40,11 +37,6 @@ class Descriptor:
         # return df_desc
 
         return list_of_desc
-
-
-class Descriptor2D(Descriptor):
-    def __init__(self):
-        super().__init__()
 
 
 class Descriptor3D(Descriptor):
