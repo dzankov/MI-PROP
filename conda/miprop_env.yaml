@@ -247,4 +247,3 @@ dependencies:
       - pmapper==1.1.1
       - pytorch-ranger==0.1.1
       - torch-optimizer==0.3.0
-prefix: /home/dima/miniforge3/envs/miprop
