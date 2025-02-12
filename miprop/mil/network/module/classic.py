@@ -1,5 +1,6 @@
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
-from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, MainNetwork, Pooling
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier
+from miprop.mil.network.module.utils import Extractor, Pooling
 
 
 class BagNetwork(BaseNetwork):
@@ -7,17 +8,17 @@ class BagNetwork(BaseNetwork):
         super().__init__(**kwargs)
         self.pool = pool
 
-    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
+    def _initialize(self, input_layer_size, hidden_layer_sizes):
+        self.extractor = Extractor((input_layer_size, *hidden_layer_sizes))
         self.pooling = Pooling(self.pool)
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
 
         if self.init_cuda:
-            self.main_net.cuda()
+            self.extractor.cuda()
             self.estimator.cuda()
 
     def forward(self, x, m):
-        out = self.main_net(x)
+        out = self.extractor(x)
         out = self.pooling(out, m)
         out = self.estimator(out)
         if isinstance(self, BaseClassifier):
@@ -31,15 +32,15 @@ class InstanceNetwork(BaseNetwork):
         super().__init__(**kwargs)
         self.pool = pool
 
-    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = Sequential(MainNetwork((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
+    def _initialize(self, input_layer_size, hidden_layer_sizes):
+        self.extractor = Sequential(Extractor((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
         self.pooling = Pooling(self.pool)
 
         if self.init_cuda:
-            self.main_net.cuda()
+            self.extractor.cuda()
 
     def forward(self, x, m):
-        out = self.main_net(x)
+        out = self.extractor(x)
         if isinstance(self, BaseClassifier):
             out = Sigmoid()(out)
         w = Softmax(dim=1)(m * out)

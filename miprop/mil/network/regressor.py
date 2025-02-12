@@ -4,7 +4,8 @@ from sklearn.preprocessing import MinMaxScaler
 
 from miprop.mil.network.module.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
     TemperatureAttentionNetwork, GumbelAttentionNetwork, GlobalTemperatureAttentionNetwork
-from miprop.mil.network.module.base import BaseRegressor, add_padding
+from miprop.mil.network.module.base import BaseRegressor
+from miprop.mil.network.module.utils import add_padding
 from miprop.mil.network.module.dynamic import DynamicPoolingNetwork
 from miprop.mil.network.module.gaussian import GaussianPoolingNetwork
 from miprop.mil.network.module.hopfield import HopfieldNetwork

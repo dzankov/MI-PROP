@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch import nn
 from torch.nn import Softmax
 from miprop.mil.network.module.base import BaseNetwork, BaseRegressor
-from miprop.mil.network.module.base import MainNetwork
+from miprop.mil.network.module.utils import Extractor
 
 
 class MarginLoss(nn.Module):
@@ -61,19 +61,19 @@ class DynamicPoolingNetwork(BaseNetwork):
     def __init__(self, **kwarhs):
         super().__init__(**kwarhs)
 
-    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
-        self.dynamic_pooling = DynamicPooling()
+    def _initialize(self, input_layer_size, hidden_layer_sizes):
+        self.extractor = Extractor((input_layer_size, *hidden_layer_sizes))
+        self.pooling = DynamicPooling()
         self.estimator = Norm()
 
-        if init_cuda:
-            self.main_net.cuda()
-            self.dynamic_pooling.cuda()
+        if self.init_cuda:
+            self.extractor.cuda()
+            self.pooling.cuda()
             self.estimator.cuda()
 
     def forward(self, x, m):
-        x = self.main_net(x)
-        w, s = self.dynamic_pooling(x, m)
+        x = self.extractor(x)
+        w, s = self.pooling(x, m)
         out = self.estimator(s)
         return w, out
 

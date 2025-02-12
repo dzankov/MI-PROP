@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.special import softmax
 
 
 class BagWrapper:
@@ -70,7 +69,3 @@ class InstanceWrapper:
         labels_modified = np.hstack([float(lb) * np.array(np.ones(len(bag))) for bag, lb in zip(bags, labels)])
         self.estimator.fit(bags_modified, labels_modified)
         return self.estimator
-
-    def get_instance_weights(self, bags):
-        w = [softmax(self.estimator.predict(bag.reshape(-1, bag.shape[-1]))) for bag in bags]
-        return w

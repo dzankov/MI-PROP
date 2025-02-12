@@ -1,5 +1,6 @@
 from torch.nn import Linear, Sigmoid
-from miprop.mil.network.module.base import BaseNetwork, MainNetwork, BaseClassifier
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier
+from miprop.mil.network.module.utils import Extractor
 
 
 class HopfieldNetwork(BaseNetwork):
@@ -7,7 +8,7 @@ class HopfieldNetwork(BaseNetwork):
         super().__init__(**kwargs)
 
     def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
-        self.main_net = MainNetwork((input_layer_size, *hidden_layer_sizes))
+        self.main_net = Extractor((input_layer_size, *hidden_layer_sizes))
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
         #
         input_dim = hidden_layer_sizes[-1]

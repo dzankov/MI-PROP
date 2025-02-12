@@ -2,11 +2,9 @@ import torch
 import numpy as np
 from torch import nn
 import torch_optimizer as optim
-from torch.utils.data import DataLoader
-from torch.nn import Sigmoid, Linear, ReLU, Sequential
+from torch.nn import Sigmoid
 from sklearn.model_selection import train_test_split
-
-from miprop.mil.network.module.utils import MBSplitter
+from miprop.mil.network.module.utils import add_padding, get_mini_batches, set_seed
 
 
 class BaseClassifier:
@@ -34,7 +32,7 @@ class BaseNetwork(nn.Module):
 
         super().__init__()
 
-        torch.manual_seed(42)  # TODO change later
+        set_seed(42)  # TODO change later
 
         self.hidden_layer_sizes = hidden_layer_sizes
         self.num_epoch = num_epoch
@@ -48,7 +46,7 @@ class BaseNetwork(nn.Module):
     def __repr__(self):
         return str(self.__class__.__name__)
 
-    def _initialize(self, input_layer_size, hidden_layer_sizes, init_cuda):
+    def _initialize(self, input_layer_size, hidden_layer_sizes):
         pass
 
     def _train_val_split(self, x, y, val_size=0.2, random_state=42):
@@ -92,8 +90,7 @@ class BaseNetwork(nn.Module):
     def fit(self, x, y):
         input_layer_size = x[0].shape[-1] # TODO make consistent: x.shape[-1]
         self._initialize(input_layer_size=input_layer_size,
-                         hidden_layer_sizes=self.hidden_layer_sizes,
-                         init_cuda=self.init_cuda)
+                         hidden_layer_sizes=self.hidden_layer_sizes)
 
         x_train, x_val, y_train, y_val, m_train, m_val = self._train_val_split(x, y)
         optimizer = optim.Yogi(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
@@ -145,62 +142,5 @@ class BaseNetwork(nn.Module):
         w = [np.asarray(i[j.bool().flatten()]) for i, j in zip(w, m)]
         return w
 
-
-class MainNetwork:
-    def __new__(cls, hidden_layer_sizes):
-        inp_dim = hidden_layer_sizes[0]
-        net = []
-        for dim in hidden_layer_sizes[1:]:
-            net.append(Linear(inp_dim, dim))
-            net.append(ReLU())
-            inp_dim = dim
-        net = Sequential(*net)
-        return net
-
-
-class Pooling(nn.Module):
-    def __init__(self, pool='mean'):
-        super().__init__()
-        self.pool = pool
-
-    def forward(self, x, m):
-        x = m * x
-        if self.pool == 'mean':
-            out = x.sum(axis=1) / m.sum(axis=1)
-        elif self.pool == 'max':
-            out = x.max(dim=1)[0]
-        elif self.pool == 'lse':
-            out = x.exp().sum(dim=1).log()
-        return out
-
-    def extra_repr(self):
-        return 'Pooling(out_dim=1)'
-
-
-def add_padding(x):
-    bag_size = max(len(i) for i in x)
-    mask = np.ones((len(x), bag_size, 1))
-
-    out = []
-    for i, bag in enumerate(x):
-        bag = np.asarray(bag)
-        if len(bag) < bag_size:
-            mask[i][len(bag):] = 0
-            padding = np.zeros((bag_size - bag.shape[0], bag.shape[1]))
-            bag = np.vstack((bag, padding))
-        out.append(bag)
-    out_bags = np.asarray(out)
-    return out_bags, mask
-
-
-def get_mini_batches(x, y, m, batch_size=16):
-    data = MBSplitter(x, y, m)
-    mb = DataLoader(data, batch_size=batch_size, shuffle=True)
-    return mb
-
-
-def set_seed(seed):
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
 
 
