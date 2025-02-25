@@ -1,20 +1,8 @@
 import numpy as np
 import torch
 from torch import nn
-from torch.nn import Linear, ReLU, Sequential
+from torch.nn.functional import softmax
 from torch.utils.data import DataLoader, Dataset
-
-
-class Extractor:
-    def __new__(cls, hidden_layer_sizes):
-        inp_dim = hidden_layer_sizes[0]
-        net = []
-        for dim in hidden_layer_sizes[1:]:
-            net.append(Linear(inp_dim, dim))
-            net.append(ReLU())
-            inp_dim = dim
-        net = Sequential(*net)
-        return net
 
 
 class Pooling(nn.Module):
@@ -75,3 +63,23 @@ class MBSplitter(Dataset):
 
     def __len__(self):
         return len(self.y)
+
+
+class SelfAttention(nn.Module):
+    def __init__(self, inp_dim, out_dim):
+        super().__init__()
+
+        self.w_query = nn.Linear(inp_dim, out_dim)
+        self.w_key = nn.Linear(inp_dim, out_dim)
+        self.w_value = nn.Linear(inp_dim, out_dim)
+
+    def forward(self, x):
+        keys = self.w_key(x)
+        querys = self.w_query(x)
+        values = self.w_value(x)
+
+        att_weights = softmax(querys @ torch.transpose(keys, 2, 1), dim=-1)
+        weighted_values = values[:, :, None] * torch.transpose(att_weights, 2, 1)[:, :, :, None]
+        outputs = weighted_values.sum(dim=1)
+
+        return outputs

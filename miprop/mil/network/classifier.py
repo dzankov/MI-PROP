@@ -1,5 +1,5 @@
 from miprop.mil.network.module.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
-    TemperatureAttentionNetwork, GlobalTemperatureAttentionNetwork, GumbelAttentionNetwork
+    TemperatureAttentionNetwork, GumbelAttentionNetwork
 from miprop.mil.network.module.base import BaseClassifier
 from miprop.mil.network.module.dynamic import DynamicPoolingNetwork, MarginLoss
 from miprop.mil.network.module.gaussian import GaussianPoolingNetwork
@@ -23,11 +23,6 @@ class GatedAttentionNetworkClassifier(GatedAttentionNetwork, BaseClassifier):
 
 
 class TemperatureAttentionNetworkClassifier(TemperatureAttentionNetwork, BaseClassifier):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-class GlobalTemperatureAttentionNetworkClassifier(GlobalTemperatureAttentionNetwork, BaseClassifier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

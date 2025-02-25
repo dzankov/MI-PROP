@@ -1,7 +1,7 @@
 import torch
 from torch.nn import Sequential, Linear, Sigmoid, ReLU
-from miprop.mil.network.module.base import BaseNetwork, BaseClassifier
-from miprop.mil.network.module.utils import Extractor, Pooling
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, FeatureExtractor
+from miprop.mil.network.module.utils import Pooling
 
 
 class GaussianPoolingNetwork(BaseNetwork):  # TODO does not work when y is big (e.g. 345)
@@ -12,7 +12,7 @@ class GaussianPoolingNetwork(BaseNetwork):  # TODO does not work when y is big (
     def _initialize(self, input_layer_size, hidden_layer_sizes):
 
         det_ndim = (128,)
-        self.extractor = Extractor((input_layer_size, *hidden_layer_sizes))
+        self.extractor = FeatureExtractor((input_layer_size, *hidden_layer_sizes))
         self.detector = Sequential(Linear(hidden_layer_sizes[-1], det_ndim[0]), ReLU(), Linear(det_ndim[0], 1))
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
         self.m = torch.nn.Parameter(torch.Tensor([0.]))

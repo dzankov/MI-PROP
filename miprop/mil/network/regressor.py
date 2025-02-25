@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
 from miprop.mil.network.module.attention import AttentionNetwork, SelfAttentionNetwork, GatedAttentionNetwork, \
-    TemperatureAttentionNetwork, GumbelAttentionNetwork, GlobalTemperatureAttentionNetwork
+    TemperatureAttentionNetwork, GumbelAttentionNetwork
 from miprop.mil.network.module.base import BaseRegressor
 from miprop.mil.network.module.utils import add_padding
 from miprop.mil.network.module.dynamic import DynamicPoolingNetwork
@@ -33,11 +33,6 @@ class TemperatureAttentionNetworkRegressor(TemperatureAttentionNetwork, BaseRegr
 
 
 class GumbelAttentionNetworkRegressor(GumbelAttentionNetwork, BaseRegressor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
-class GlobalTemperatureAttentionNetworkRegressor(GlobalTemperatureAttentionNetwork, BaseRegressor):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

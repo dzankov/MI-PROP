@@ -1,6 +1,6 @@
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
-from miprop.mil.network.module.base import BaseNetwork, BaseClassifier
-from miprop.mil.network.module.utils import Extractor, Pooling
+from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, FeatureExtractor
+from miprop.mil.network.module.utils import Pooling
 
 
 class BagNetwork(BaseNetwork):
@@ -9,7 +9,7 @@ class BagNetwork(BaseNetwork):
         self.pool = pool
 
     def _initialize(self, input_layer_size, hidden_layer_sizes):
-        self.extractor = Extractor((input_layer_size, *hidden_layer_sizes))
+        self.extractor = FeatureExtractor((input_layer_size, *hidden_layer_sizes))
         self.pooling = Pooling(self.pool)
         self.estimator = Linear(hidden_layer_sizes[-1], 1)
 
@@ -33,7 +33,7 @@ class InstanceNetwork(BaseNetwork):
         self.pool = pool
 
     def _initialize(self, input_layer_size, hidden_layer_sizes):
-        self.extractor = Sequential(Extractor((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
+        self.extractor = Sequential(FeatureExtractor((input_layer_size, *hidden_layer_sizes)), Linear(hidden_layer_sizes[-1], 1))
         self.pooling = Pooling(self.pool)
 
         if self.init_cuda:

@@ -1,5 +1,4 @@
 import numpy as np
-from miprop.utils.dataset import Dataset
 
 
 def validate_desc_vector(desc_vector):
