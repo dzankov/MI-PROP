@@ -141,30 +141,4 @@ class TemperatureAttentionNetwork(AttentionNetwork):
         return w, out
 
 
-class GumbelAttentionNetwork(AttentionNetwork):
-
-    def __init__(self, tau=1, **kwargs):
-        super().__init__(**kwargs)
-        self.tau = tau
-
-    def forward(self, x, m):
-
-        x = self.extractor(x)
-
-        x_det = torch.transpose(m * self.attention(x), 2, 1)
-
-        if self.instance_weight_dropout == 0:
-            w = Softmax(dim=2)(x_det)
-        else:
-            w = nn.functional.gumbel_softmax(x_det, tau=self.tau, dim=2)
-
-        x = torch.bmm(w, x)
-
-        out = self.estimator(x)
-
-        out = self.get_score(out)
-
-        return w, out
-
-
 

@@ -5,25 +5,6 @@ from torch.nn.functional import softmax
 from torch.utils.data import DataLoader, Dataset
 
 
-class Pooling(nn.Module):
-    def __init__(self, pool='mean'):
-        super().__init__()
-        self.pool = pool
-
-    def forward(self, x, m):
-        x = m * x
-        if self.pool == 'mean':
-            out = x.sum(axis=1) / m.sum(axis=1)
-        elif self.pool == 'max':
-            out = x.max(dim=1)[0]
-        elif self.pool == 'lse':
-            out = x.exp().sum(dim=1).log()
-        return out
-
-    def extra_repr(self):
-        return 'Pooling(out_dim=1)'
-
-
 def add_padding(x):
     bag_size = max(len(i) for i in x)
     mask = np.ones((len(x), bag_size, 1))

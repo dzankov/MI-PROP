@@ -1,7 +1,7 @@
 import torch
 from torch.nn import Sequential, Linear, Sigmoid, ReLU
 from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, FeatureExtractor
-from miprop.mil.network.module.utils import Pooling
+from miprop.mil.network.module.classic import Pooling
 
 
 class GaussianPoolingNetwork(BaseNetwork):  # TODO does not work when y is big (e.g. 345)

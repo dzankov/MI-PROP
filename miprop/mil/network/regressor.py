@@ -32,11 +32,6 @@ class TemperatureAttentionNetworkRegressor(TemperatureAttentionNetwork, BaseRegr
         super().__init__(**kwargs)
 
 
-class GumbelAttentionNetworkRegressor(GumbelAttentionNetwork, BaseRegressor):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
 class InstanceNetworkRegressor(InstanceNetwork, BaseRegressor):
     def __init__(self, pool='mean', **kwargs):
         super().__init__(pool=pool, **kwargs)

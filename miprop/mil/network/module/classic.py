@@ -1,6 +1,5 @@
 from torch.nn import Sequential, Linear, Softmax, Sigmoid
 from miprop.mil.network.module.base import BaseNetwork, BaseClassifier, FeatureExtractor
-from miprop.mil.network.module.utils import Pooling
 
 
 class BagNetwork(BaseNetwork):
@@ -43,9 +42,24 @@ class InstanceNetwork(BaseNetwork):
         out = self.extractor(x)
         if isinstance(self, BaseClassifier):
             out = Sigmoid()(out)
-        w = Softmax(dim=1)(m * out)
-        w = w.view(w.shape[0], w.shape[-1], w.shape[1])
         out = self.pooling(out, m)
         return w, out
 
 
+class Pooling(nn.Module):
+    def __init__(self, pool='mean'):
+        super().__init__()
+        self.pool = pool
+
+    def forward(self, x, m):
+        x = m * x
+        if self.pool == 'mean':
+            out = x.sum(axis=1) / m.sum(axis=1)
+        elif self.pool == 'max':
+            out = x.max(dim=1)[0]
+        elif self.pool == 'lse':
+            out = x.exp().sum(dim=1).log()
+        return out
+
+    def extra_repr(self):
+        return 'Pooling(out_dim=1)'

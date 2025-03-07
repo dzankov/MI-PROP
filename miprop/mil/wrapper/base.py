@@ -60,7 +60,7 @@ class InstanceWrapper:
         elif self.pool == 'min':
             return np.min(preds)
         else:
-            print('No exist')
+            print(f'Poolling {self.pool} is not known')
         return preds
 
     def fit(self, bags, labels):

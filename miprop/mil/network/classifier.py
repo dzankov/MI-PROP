@@ -27,11 +27,6 @@ class TemperatureAttentionNetworkClassifier(TemperatureAttentionNetwork, BaseCla
         super().__init__(**kwargs)
 
 
-class GumbelAttentionNetworkClassifier(GumbelAttentionNetwork, BaseClassifier):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-
 class BagNetworkClassifier(BagNetwork, BaseClassifier):
 
     def __init__(self, pool='mean', **kwargs):
